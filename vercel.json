@@ -1,5 +1,9 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }],
+  "rewrites": [
+    { "source": "/_expo/static/(.*)", "destination": "/_expo/static/$1" },
+    { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
   "buildCommand": "expo export",
   "outputDirectory": "dist",
   "framework": "expo",
