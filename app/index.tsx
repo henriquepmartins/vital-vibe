@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Stack } from "expo-router";
 import React from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginScreen({
   navigation,
@@ -27,10 +28,51 @@ export default function LoginScreen({
   const [password, setPassword] = useState("");
   const [userType, setUserType] = useState("paciente");
   const [secureTextEntry, setSecureTextEntry] = useState(true);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = () => {
-    console.log("Login como:", userType, cpf, password);
+  const formatCPF = (text: string) => {
+    const numbers = text.replace(/\D/g, "");
+
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 6) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+    } else if (numbers.length <= 9) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(
+        6
+      )}`;
+    } else {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(
+        6,
+        9
+      )}-${numbers.slice(9, 11)}`;
+    }
+  };
+
+  const handleCPFChange = (text: string) => {
+    const formattedCPF = formatCPF(text);
+    setCpf(formattedCPF);
+  };
+
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const cleanCPF = cpf.replace(/\D/g, "");
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: `${cleanCPF}@vitalvibe.com`,
+        password: password,
+      });
+
+      if (!error) {
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -103,7 +145,7 @@ export default function LoginScreen({
                     style={styles.input}
                     placeholder="000.000.000-00"
                     value={cpf}
-                    onChangeText={setCpf}
+                    onChangeText={handleCPFChange}
                     keyboardType="numeric"
                     maxLength={14}
                   />
@@ -147,11 +189,19 @@ export default function LoginScreen({
               </View>
 
               <TouchableOpacity
-                style={styles.loginButton}
+                style={[
+                  styles.loginButton,
+                  loading && styles.loginButtonDisabled,
+                ]}
                 onPress={handleLogin}
+                disabled={loading}
               >
-                <Text style={styles.loginButtonText}>Entrar</Text>
-                <Ionicons name="arrow-forward" size={20} color="#fff" />
+                <Text style={styles.loginButtonText}>
+                  {loading ? "Entrando..." : "Entrar"}
+                </Text>
+                {!loading && (
+                  <Ionicons name="arrow-forward" size={20} color="#fff" />
+                )}
               </TouchableOpacity>
 
               <View style={styles.registerContainer}>
@@ -285,6 +335,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
+  },
+  loginButtonDisabled: {
+    opacity: 0.7,
   },
   loginButtonText: {
     color: "white",

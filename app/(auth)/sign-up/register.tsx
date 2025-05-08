@@ -8,11 +8,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { supabase } from "@/lib/supabase";
 
 export default function RegisterScreen() {
   const [name, setName] = useState("");
@@ -20,12 +22,55 @@ export default function RegisterScreen() {
   const [cpf, setCpf] = useState("");
   const [password, setPassword] = useState("");
   const [secureTextEntry, setSecureTextEntry] = useState(true);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleRegister = () => {
-    // Lógica de cadastro aqui
-    console.log("Cadastro:", name, email, cpf, password);
+  // Função para formatar o CPF
+  const formatCPF = (text: string) => {
+    // Remove todos os caracteres não numéricos
+    const numbers = text.replace(/\D/g, '');
+    
+    // Aplica a formatação
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 6) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+    } else if (numbers.length <= 9) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+    } else {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
+    }
   };
+
+  // Função para lidar com a mudança do CPF
+  const handleCPFChange = (text: string) => {
+    const formattedCPF = formatCPF(text);
+    setCpf(formattedCPF);
+  };
+
+  async function handleRegister() {
+    setLoading(true);
+
+    const { data, error } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {
+          name: name,
+          cpf: cpf,
+        },
+      },
+    });
+
+    if (error) {
+      Alert.alert("Erro", error.message);
+    } else {
+      Alert.alert("Sucesso", "Verifique seu email para confirmar o cadastro!");
+      router.push("/");
+    }
+    
+    setLoading(false);
+  }
 
   return (
     <LinearGradient
@@ -98,7 +143,7 @@ export default function RegisterScreen() {
                   style={styles.input}
                   placeholder="000.000.000-00"
                   value={cpf}
-                  onChangeText={setCpf}
+                  onChangeText={handleCPFChange}
                   keyboardType="numeric"
                   maxLength={14}
                 />
@@ -135,11 +180,14 @@ export default function RegisterScreen() {
             </View>
 
             <TouchableOpacity
-              style={styles.registerButton}
+              style={[styles.registerButton, loading && styles.registerButtonDisabled]}
               onPress={handleRegister}
+              disabled={loading}
             >
-              <Text style={styles.registerButtonText}>Cadastrar</Text>
-              <Ionicons name="checkmark" size={20} color="#fff" />
+              <Text style={styles.registerButtonText}>
+                {loading ? "Cadastrando..." : "Cadastrar"}
+              </Text>
+              {!loading && <Ionicons name="checkmark" size={20} color="#fff" />}
             </TouchableOpacity>
 
             <View style={styles.loginContainer}>
@@ -234,6 +282,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
+  },
+  registerButtonDisabled: {
+    opacity: 0.7,
   },
   registerButtonText: {
     color: "white",
