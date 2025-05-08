@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 8 : 16,
   },
   illustration: {
-    width: width * 0.4,
+    width: width * 0.6,
     height: width * 0.65,
     bottom: 20,
   },

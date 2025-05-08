@@ -196,9 +196,9 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 20 : 30,
   },
   illustration: {
-    width: width * 0.55,
+    width: width * 0.65,
     height: width * 0.65,
-    bottom: 20,
+    bottom: 28,
   },
   loginCard: {
     backgroundColor: "#FFFFFF",
