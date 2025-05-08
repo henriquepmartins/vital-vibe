@@ -65,8 +65,31 @@ export default function LoginScreen({
         password: password,
       });
 
-      if (!error) {
-        router.push("/dashboard");
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("user_type")
+        .eq("id", data.user.id)
+        .single();
+
+      if (profileError) {
+        console.error(profileError);
+        return;
+      }
+
+      if (profileData.user_type !== userType) {
+        console.error("Tipo de usuário incorreto");
+        return;
+      }
+
+      if (userType === "paciente") {
+        router.replace("/(app)/paciente/dashboard");
+      } else if (userType === "medico") {
+        router.replace("/(app)/medico/dashboard");
       }
     } catch (error) {
       console.error(error);
