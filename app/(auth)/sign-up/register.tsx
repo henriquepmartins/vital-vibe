@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   illustration: {
-    width: width * 0.4,
+    width: width * 0.13,
     height: width * 0.65,
     bottom: 20,
   },

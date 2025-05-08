@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   illustration: {
-    width: width * 0.55,
+    width: width * 0.2,
     height: width * 0.65,
     bottom: 20
   },
