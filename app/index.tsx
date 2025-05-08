@@ -1,0 +1,308 @@
+"use client";
+import { useState } from "react";
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { StatusBar } from "expo-status-bar";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { Stack } from "expo-router";
+import React from "react";
+
+export default function LoginScreen({
+  navigation,
+}: {
+  navigation: NativeStackNavigationProp<any>;
+}) {
+  const [cpf, setCpf] = useState("");
+  const [password, setPassword] = useState("");
+  const [userType, setUserType] = useState("paciente");
+  const [secureTextEntry, setSecureTextEntry] = useState(true);
+  const router = useRouter();
+
+  const handleLogin = () => {
+    console.log("Login como:", userType, cpf, password);
+  };
+
+  return (
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <LinearGradient
+        colors={["#ffffff", "#f8f9fa"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.background}
+      >
+        <StatusBar style="dark" />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.container}
+        >
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.card}>
+              <Text style={styles.title}>Bem-vindo</Text>
+              <Text style={styles.subtitle}>
+                Acesse a plataforma Vital Vibe!
+              </Text>
+
+              <View style={styles.userTypeContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.userTypeButton,
+                    userType === "paciente" && styles.activeUserTypeButton,
+                  ]}
+                  onPress={() => setUserType("paciente")}
+                >
+                  <Text
+                    style={[
+                      styles.userTypeButtonText,
+                      userType === "paciente" &&
+                        styles.activeUserTypeButtonText,
+                    ]}
+                  >
+                    Paciente
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.userTypeButton,
+                    userType === "medico" && styles.activeUserTypeButton,
+                  ]}
+                  onPress={() => setUserType("medico")}
+                >
+                  <Text
+                    style={[
+                      styles.userTypeButtonText,
+                      userType === "medico" && styles.activeUserTypeButtonText,
+                    ]}
+                  >
+                    Médico
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>CPF</Text>
+                <View style={styles.inputWrapper}>
+                  <Ionicons
+                    name="card-outline"
+                    size={20}
+                    color="#999"
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="000.000.000-00"
+                    value={cpf}
+                    onChangeText={setCpf}
+                    keyboardType="numeric"
+                    maxLength={14}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.passwordContainer}>
+                <View style={styles.passwordLabelContainer}>
+                  <Text style={styles.inputLabel}>Senha</Text>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("ForgotPassword")}
+                  >
+                    <Text style={styles.forgotPassword}>Esqueceu a senha?</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.inputWrapper}>
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={20}
+                    color="#999"
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="********"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={secureTextEntry}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setSecureTextEntry(!secureTextEntry)}
+                  >
+                    <Ionicons
+                      name={secureTextEntry ? "eye-outline" : "eye-off-outline"}
+                      size={20}
+                      color="#999"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.loginButton}
+                onPress={handleLogin}
+              >
+                <Text style={styles.loginButtonText}>Entrar</Text>
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
+              </TouchableOpacity>
+
+              <View style={styles.registerContainer}>
+                <Text style={styles.registerText}>Não tem uma conta? </Text>
+                <TouchableOpacity
+                  onPress={() => router.push("/(auth)/sign-up/register")}
+                >
+                  <Text style={styles.registerLink}>Cadastre-se</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
+  container: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  card: {
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 25,
+    width: "100%",
+    maxWidth: 400,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#2E8B57",
+    textAlign: "center",
+    marginBottom: 5,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 25,
+  },
+  userTypeContainer: {
+    flexDirection: "row",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  userTypeButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  activeUserTypeButton: {
+    borderBottomWidth: 2,
+    borderBottomColor: "#2E8B57",
+  },
+  userTypeButtonText: {
+    color: "#999",
+    fontWeight: "500",
+  },
+  activeUserTypeButtonText: {
+    color: "#2E8B57",
+    fontWeight: "bold",
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  passwordContainer: {
+    marginBottom: 25,
+  },
+  passwordLabelContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#333",
+    marginBottom: 8,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#2E8B57",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  eyeIcon: {
+    padding: 5,
+  },
+  forgotPassword: {
+    color: "#2E8B57",
+    fontSize: 14,
+  },
+  loginButton: {
+    backgroundColor: "#2E8B57",
+    borderRadius: 10,
+    paddingVertical: 15,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  loginButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginRight: 10,
+  },
+  registerContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  registerText: {
+    color: "#666",
+    fontSize: 14,
+  },
+  registerLink: {
+    color: "#2E8B57",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+});
