@@ -25,10 +25,11 @@ export default function LoginScreen({
   navigation: NativeStackNavigationProp<any>;
 }) {
   const [cpf, setCpf] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [userType, setUserType] = useState("paciente");
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
 
   const formatCPF = (text: string) => {
@@ -56,43 +57,33 @@ export default function LoginScreen({
   };
 
   const handleLogin = async () => {
+    setErrorMessage("");
+    if (!email || !password) {
+      setErrorMessage("Preencha todos os campos.");
+      return;
+    }
+
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      setErrorMessage("Digite um email válido.");
+      return;
+    }
     setLoading(true);
     try {
-      const cleanCPF = cpf.replace(/\D/g, "");
-
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: `${cleanCPF}@vitalvibe.com`,
+        email: email,
         password: password,
       });
-
       if (error) {
-        console.error(error);
+        if (error.message.toLowerCase().includes("invalid login credentials")) {
+          setErrorMessage("Email ou senha incorretos.");
+        } else {
+          setErrorMessage(error.message);
+        }
         return;
       }
-
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("user_type")
-        .eq("id", data.user.id)
-        .single();
-
-      if (profileError) {
-        console.error(profileError);
-        return;
-      }
-
-      if (profileData.user_type !== userType) {
-        console.error("Tipo de usuário incorreto");
-        return;
-      }
-
-      if (userType === "paciente") {
-        router.replace("/(app)/paciente/dashboard");
-      } else if (userType === "medico") {
-        router.replace("/(app)/medico/dashboard");
-      }
+      router.push("/dashboard");
     } catch (error) {
-      console.error(error);
+      setErrorMessage("Erro inesperado. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -118,59 +109,26 @@ export default function LoginScreen({
               <Text style={styles.subtitle}>
                 Acesse a plataforma Vital Vibe!
               </Text>
-
-              <View style={styles.userTypeContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.userTypeButton,
-                    userType === "paciente" && styles.activeUserTypeButton,
-                  ]}
-                  onPress={() => setUserType("paciente")}
-                >
-                  <Text
-                    style={[
-                      styles.userTypeButtonText,
-                      userType === "paciente" &&
-                        styles.activeUserTypeButtonText,
-                    ]}
-                  >
-                    Paciente
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.userTypeButton,
-                    userType === "medico" && styles.activeUserTypeButton,
-                  ]}
-                  onPress={() => setUserType("medico")}
-                >
-                  <Text
-                    style={[
-                      styles.userTypeButtonText,
-                      userType === "medico" && styles.activeUserTypeButtonText,
-                    ]}
-                  >
-                    Médico
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              {errorMessage ? (
+                <Text style={styles.errorMessage}>{errorMessage}</Text>
+              ) : null}
 
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>CPF</Text>
+                <Text style={styles.inputLabel}>Email</Text>
                 <View style={styles.inputWrapper}>
                   <Ionicons
-                    name="card-outline"
+                    name="mail-outline"
                     size={20}
                     color="#999"
                     style={styles.inputIcon}
                   />
                   <TextInput
                     style={styles.input}
-                    placeholder="000.000.000-00"
-                    value={cpf}
-                    onChangeText={handleCPFChange}
-                    keyboardType="numeric"
-                    maxLength={14}
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
                   />
                 </View>
               </View>
@@ -286,29 +244,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 25,
   },
-  userTypeContainer: {
-    flexDirection: "row",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-  userTypeButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  activeUserTypeButton: {
-    borderBottomWidth: 2,
-    borderBottomColor: "#2E8B57",
-  },
-  userTypeButtonText: {
-    color: "#999",
-    fontWeight: "500",
-  },
-  activeUserTypeButtonText: {
-    color: "#2E8B57",
-    fontWeight: "bold",
-  },
   inputContainer: {
     marginBottom: 15,
   },
@@ -379,6 +314,15 @@ const styles = StyleSheet.create({
   registerLink: {
     color: "#2E8B57",
     fontSize: 14,
+    fontWeight: "bold",
+  },
+  errorMessage: {
+    color: "#ff4444",
+    backgroundColor: "#ffeaea",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+    textAlign: "center",
     fontWeight: "bold",
   },
 });

@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -24,57 +25,67 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Função para formatar o CPF
   const formatCPF = (text: string) => {
     const numbers = text.replace(/\D/g, "");
-    return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 6) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+    } else if (numbers.length <= 9) {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(
+        6
+      )}`;
+    } else {
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(
+        6,
+        9
+      )}-${numbers.slice(9, 11)}`;
+    }
   };
 
-  // Função para lidar com a mudança do CPF
   const handleCPFChange = (text: string) => {
     const formattedCPF = formatCPF(text);
     setCpf(formattedCPF);
   };
 
-  async function handleRegister() {
+  async function handleSignUp() {
     setLoading(true);
 
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-          data: {
-            name: name,
-            cpf: cpf,
-            user_type: "paciente",
-          },
-        },
-      });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name, cpf: cpf, email: email },
+      },
+    });
 
-      if (error) {
-        console.error(error);
-      } else {
-        const { error: profileError } = await supabase.from("profiles").insert([
-          {
-            id: data.user?.id,
-            name: name,
-            cpf: cpf,
-            user_type: "paciente",
-          },
-        ]);
-
-        if (profileError) {
-          console.error(profileError);
-        } else {
-          router.push("/(app)/paciente/dashboard");
-        }
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
+    if (error) {
+      Alert.alert("Erro", error.message);
       setLoading(false);
+      return;
     }
+
+    const user = data.user;
+    if (user) {
+      const { error: insertError } = await supabase.from("users").insert([
+        {
+          id: user.id,
+          name,
+          email,
+          cpf: cpf.replace(/\D/g, ""),
+        },
+      ]);
+      if (insertError) {
+        Alert.alert("Erro ao salvar no banco", insertError.message);
+        setLoading(false);
+        return;
+      }
+    }
+
+    Alert.alert("Sucesso", "Verifique seu email para confirmar o cadastro!");
+    router.replace("/dashboard");
+    setLoading(false);
   }
 
   return (
@@ -189,7 +200,7 @@ export default function RegisterScreen() {
                 styles.registerButton,
                 loading && styles.registerButtonDisabled,
               ]}
-              onPress={handleRegister}
+              onPress={handleSignUp}
               disabled={loading}
             >
               <Text style={styles.registerButtonText}>
