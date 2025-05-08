@@ -27,6 +27,11 @@ export default function RegisterScreen() {
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [phone, setPhone] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
   const router = useRouter();
 
   const formatCPF = (text: string) => {
@@ -52,6 +57,43 @@ export default function RegisterScreen() {
     setCpf(formattedCPF);
   };
 
+  function formatBirthdateInput(text: string) {
+    let cleaned = text.replace(/\D/g, "");
+    if (cleaned.length > 8) cleaned = cleaned.slice(0, 8);
+    let formatted = cleaned;
+    if (cleaned.length > 4) {
+      formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(
+        2,
+        4
+      )}/${cleaned.slice(4)}`;
+    } else if (cleaned.length > 2) {
+      formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`;
+    }
+    return formatted;
+  }
+
+  function formatPhoneInput(text: string) {
+    let cleaned = text.replace(/\D/g, "");
+    if (cleaned.length > 11) cleaned = cleaned.slice(0, 11);
+    if (cleaned.length <= 2) return cleaned;
+    if (cleaned.length <= 7)
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+    if (cleaned.length <= 11)
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(
+        7
+      )}`;
+    return text;
+  }
+
+  function formatBirthdateToISO(date: string) {
+    // de DD/MM/AAAA para AAAA-MM-DD
+    const [day, month, year] = date.split("/");
+    if (day && month && year) {
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    }
+    return null;
+  }
+
   async function handleSignUp() {
     setLoading(true);
     setErrorMessage("");
@@ -69,12 +111,18 @@ export default function RegisterScreen() {
     }
     const user = data.user;
     if (user) {
+      const birthdateISO = formatBirthdateToISO(birthdate);
       const { error: insertError } = await supabase.from("users").insert([
         {
           id: user.id,
           name,
           email,
           cpf: cpf.replace(/\D/g, ""),
+          phone,
+          birthdate: birthdateISO,
+          avatar_url: avatarUrl,
+          height: height ? Number(height) : null,
+          weight: weight ? Number(weight) : null,
         },
       ]);
       if (insertError) {
@@ -93,9 +141,14 @@ export default function RegisterScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         <View style={styles.phoneContainer}>
-          <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.coloredBackground}>
               <Image
                 source={require("@/assets/images/register.png")}
@@ -141,6 +194,50 @@ export default function RegisterScreen() {
                   onChangeText={handleCPFChange}
                   keyboardType="numeric"
                   maxLength={14}
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Telefone</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="(00) 00000-0000"
+                  value={phone}
+                  onChangeText={(text) => setPhone(formatPhoneInput(text))}
+                  keyboardType="phone-pad"
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Data de Nascimento</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="DD/MM/AAAA"
+                  value={birthdate}
+                  onChangeText={(text) =>
+                    setBirthdate(formatBirthdateInput(text))
+                  }
+                  keyboardType="numeric"
+                  maxLength={10}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Altura (cm)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ex: 170"
+                  value={height}
+                  onChangeText={setHeight}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Peso (kg)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ex: 70"
+                  value={weight}
+                  onChangeText={setWeight}
+                  keyboardType="numeric"
                 />
               </View>
               <View style={styles.inputContainer}>
@@ -204,7 +301,8 @@ const styles = StyleSheet.create({
   phoneContainer: {
     width: width > 500 ? 420 : "96%",
     maxWidth: 420,
-    height: "auto",
+    height: "98%",
+    minHeight: height * 0.8,
     borderRadius: 30,
     overflow: "hidden",
     backgroundColor: "#FFFFFF",
@@ -212,22 +310,25 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
-    marginTop: 10,
+    marginTop: Platform.OS === "ios" ? 10 : 20,
     elevation: 10,
+    flex: 1,
+    bottom: 10,
   },
   scrollContainer: {
     flexGrow: 1,
+    paddingBottom: 40,
   },
   coloredBackground: {
-    height: height * 0.22,
+    height: height * 0.25,
     width: "100%",
     backgroundColor: "#ADC178",
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 8,
+    paddingTop: Platform.OS === "ios" ? 8 : 16,
   },
   illustration: {
-    width: width * 0.13,
+    width: width * 0.4,
     height: width * 0.65,
     bottom: 20,
   },
@@ -236,30 +337,30 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     marginTop: -30,
-    paddingHorizontal: 25,
+    paddingHorizontal: width > 500 ? 35 : 25,
     paddingTop: 16,
-    paddingBottom: 16,
+    paddingBottom: Platform.OS === "ios" ? 16 : 24,
   },
   title: {
-    fontSize: 28,
+    fontSize: width > 500 ? 32 : 28,
     fontWeight: "bold",
     color: "#6C584C",
     textAlign: "center",
     marginBottom: 8,
-    fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
+    fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: width > 500 ? 16 : 15,
     color: "#A98467",
     textAlign: "center",
     marginBottom: 22,
   },
   inputContainer: {
-    marginBottom: 10,
-    marginTop: 10,
+    marginBottom: width > 500 ? 15 : 10,
+    marginTop: width > 500 ? 15 : 10,
   },
   inputLabel: {
-    fontSize: 15,
+    fontSize: width > 500 ? 16 : 15,
     color: "#6C584C",
     marginBottom: 6,
     fontWeight: "600",
@@ -270,20 +371,20 @@ const styles = StyleSheet.create({
   input: {
     borderBottomWidth: 1,
     borderBottomColor: "#DDE5B6",
-    paddingVertical: 12,
-    fontSize: 16,
+    paddingVertical: width > 500 ? 14 : 12,
+    fontSize: width > 500 ? 18 : 16,
     color: "#6C584C",
   },
   eyeIcon: {
     position: "absolute",
     right: 0,
-    top: 8,
+    top: width > 500 ? 10 : 8,
     padding: 4,
   },
   loginButton: {
     backgroundColor: "#A98467",
     borderRadius: 18,
-    paddingVertical: 15,
+    paddingVertical: width > 500 ? 18 : 15,
     alignItems: "center",
     marginTop: 20,
     marginBottom: 18,
@@ -296,7 +397,7 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: width > 500 ? 20 : 18,
     fontWeight: "bold",
     letterSpacing: 1,
   },
@@ -307,12 +408,12 @@ const styles = StyleSheet.create({
   },
   registerText: {
     color: "#6C584C",
-    fontSize: 14,
+    fontSize: width > 500 ? 15 : 14,
     marginTop: 60,
   },
   registerLink: {
     color: "#ADC178",
-    fontSize: 14,
+    fontSize: width > 500 ? 15 : 14,
     fontWeight: "bold",
     textDecorationLine: "underline",
     marginTop: 60,
@@ -321,9 +422,10 @@ const styles = StyleSheet.create({
     color: "#ff4444",
     backgroundColor: "#ffeaea",
     borderRadius: 8,
-    padding: 10,
+    padding: width > 500 ? 12 : 10,
     marginBottom: 15,
     textAlign: "center",
     fontWeight: "bold",
+    fontSize: width > 500 ? 15 : 14,
   },
 });

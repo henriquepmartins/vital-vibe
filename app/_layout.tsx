@@ -9,6 +9,10 @@ export default function MainLayout() {
         options={{ headerShown: false }}
       />
       <Stack.Screen name="(app)/dashboard" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="screens/ProfileScreen"
+        options={{ headerShown: false }}
+      />
     </Stack>
   );
 }
