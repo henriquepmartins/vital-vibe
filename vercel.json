@@ -4,9 +4,8 @@
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
-  "buildCommand": "expo export",
+  "buildCommand": "expo export:web",
   "outputDirectory": "dist",
-  "framework": "expo",
   "headers": [
     {
       "source": "/(.*)",
