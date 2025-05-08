@@ -197,6 +197,7 @@ const styles = StyleSheet.create({
   illustration: {
     width: width * 0.55,
     height: width * 0.65,
+    bottom: 20
   },
   loginCard: {
     backgroundColor: "#FFFFFF",

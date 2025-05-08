@@ -8,13 +8,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
+  Image,
+  SafeAreaView,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
+
+const { width, height } = Dimensions.get("window");
 
 export default function RegisterScreen() {
   const [name, setName] = useState("");
@@ -23,11 +26,11 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState("");
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
 
   const formatCPF = (text: string) => {
     const numbers = text.replace(/\D/g, "");
-
     if (numbers.length <= 3) {
       return numbers;
     } else if (numbers.length <= 6) {
@@ -51,7 +54,7 @@ export default function RegisterScreen() {
 
   async function handleSignUp() {
     setLoading(true);
-
+    setErrorMessage("");
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -59,13 +62,11 @@ export default function RegisterScreen() {
         data: { name, cpf: cpf, email: email },
       },
     });
-
     if (error) {
-      Alert.alert("Erro", error.message);
+      setErrorMessage(error.message);
       setLoading(false);
       return;
     }
-
     const user = data.user;
     if (user) {
       const { error: insertError } = await supabase.from("users").insert([
@@ -77,45 +78,41 @@ export default function RegisterScreen() {
         },
       ]);
       if (insertError) {
-        Alert.alert("Erro ao salvar no banco", insertError.message);
+        setErrorMessage(insertError.message);
         setLoading(false);
         return;
       }
     }
-
-    Alert.alert("Sucesso", "Verifique seu email para confirmar o cadastro!");
     router.replace("/dashboard");
     setLoading(false);
   }
 
   return (
-    <LinearGradient
-      colors={["#ffffff", "#f8f9fa"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.background}
-    >
+    <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.container}
+        style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <View style={styles.card}>
-            <Text style={styles.title}>Criar Conta</Text>
-            <Text style={styles.subtitle}>
-              Preencha seus dados para se cadastrar
-            </Text>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Nome</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons
-                  name="person-outline"
-                  size={20}
-                  color="#999"
-                  style={styles.inputIcon}
-                />
+        <View style={styles.phoneContainer}>
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.coloredBackground}>
+              <Image
+                source={require("@/assets/images/register.png")}
+                style={styles.illustration}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={styles.loginCard}>
+              <Text style={styles.title}>Criar Conta</Text>
+              <Text style={styles.subtitle}>
+                Preencha seus dados para se cadastrar
+              </Text>
+              {errorMessage ? (
+                <Text style={styles.errorMessage}>{errorMessage}</Text>
+              ) : null}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Nome</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Seu nome completo"
@@ -124,17 +121,8 @@ export default function RegisterScreen() {
                   autoCapitalize="words"
                 />
               </View>
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Email</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons
-                  name="mail-outline"
-                  size={20}
-                  color="#999"
-                  style={styles.inputIcon}
-                />
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Email</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="seu@email.com"
@@ -144,17 +132,8 @@ export default function RegisterScreen() {
                   autoCapitalize="none"
                 />
               </View>
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>CPF</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons
-                  name="card-outline"
-                  size={20}
-                  color="#999"
-                  style={styles.inputIcon}
-                />
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>CPF</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="000.000.000-00"
@@ -164,164 +143,187 @@ export default function RegisterScreen() {
                   maxLength={14}
                 />
               </View>
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Senha</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={20}
-                  color="#999"
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="********"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={secureTextEntry}
-                />
-                <TouchableOpacity
-                  style={styles.eyeIcon}
-                  onPress={() => setSecureTextEntry(!secureTextEntry)}
-                >
-                  <Ionicons
-                    name={secureTextEntry ? "eye-outline" : "eye-off-outline"}
-                    size={20}
-                    color="#999"
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Senha</Text>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="********"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={secureTextEntry}
                   />
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setSecureTextEntry(!secureTextEntry)}
+                  >
+                    <Ionicons
+                      name={secureTextEntry ? "eye-outline" : "eye-off-outline"}
+                      size={20}
+                      color="#A98467"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.loginButton}
+                onPress={handleSignUp}
+                disabled={loading}
+              >
+                <Text style={styles.loginButtonText}>
+                  {loading ? "Cadastrando..." : "Cadastrar"}
+                </Text>
+              </TouchableOpacity>
+              <View style={styles.registerContainer}>
+                <Text style={styles.registerText}>Já tem uma conta? </Text>
+                <TouchableOpacity onPress={() => router.replace("/")}>
+                  <Text style={styles.registerLink}>Entrar</Text>
                 </TouchableOpacity>
               </View>
             </View>
-
-            <TouchableOpacity
-              style={[
-                styles.registerButton,
-                loading && styles.registerButtonDisabled,
-              ]}
-              onPress={handleSignUp}
-              disabled={loading}
-            >
-              <Text style={styles.registerButtonText}>
-                {loading ? "Cadastrando..." : "Cadastrar"}
-              </Text>
-              {!loading && <Ionicons name="checkmark" size={20} color="#fff" />}
-            </TouchableOpacity>
-
-            <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Já tem uma conta? </Text>
-              <TouchableOpacity onPress={() => router.push("/")}>
-                <Text style={styles.loginLink}>Entrar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
-  },
   container: {
     flex: 1,
+    backgroundColor: "#F0EAD2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  keyboardView: {
+    flex: 1,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  phoneContainer: {
+    width: width > 500 ? 420 : "96%",
+    maxWidth: 420,
+    height: "auto",
+    borderRadius: 30,
+    overflow: "hidden",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    marginTop: 10,
+    elevation: 10,
   },
   scrollContainer: {
     flexGrow: 1,
+  },
+  coloredBackground: {
+    height: height * 0.22,
+    width: "100%",
+    backgroundColor: "#ADC178",
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    paddingTop: 8,
   },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 15,
-    padding: 25,
-    width: "100%",
-    maxWidth: 400,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+  illustration: {
+    width: width * 0.4,
+    height: width * 0.65,
+    bottom: 20,
+  },
+  loginCard: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    marginTop: -30,
+    paddingHorizontal: 25,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#2E8B57",
+    color: "#6C584C",
     textAlign: "center",
-    marginBottom: 5,
+    marginBottom: 8,
+    fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
   },
   subtitle: {
-    fontSize: 16,
-    color: "#666",
+    fontSize: 15,
+    color: "#A98467",
     textAlign: "center",
-    marginBottom: 25,
+    marginBottom: 22,
   },
   inputContainer: {
-    marginBottom: 15,
+    marginBottom: 10,
+    marginTop: 10,
   },
   inputLabel: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#333",
-    marginBottom: 8,
+    fontSize: 15,
+    color: "#6C584C",
+    marginBottom: 6,
+    fontWeight: "600",
   },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#2E8B57",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-  },
-  inputIcon: {
-    marginRight: 10,
+  passwordContainer: {
+    position: "relative",
   },
   input: {
-    flex: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: "#DDE5B6",
     paddingVertical: 12,
     fontSize: 16,
+    color: "#6C584C",
   },
   eyeIcon: {
-    padding: 5,
+    position: "absolute",
+    right: 0,
+    top: 8,
+    padding: 4,
   },
-  registerButton: {
-    backgroundColor: "#2E8B57",
-    borderRadius: 10,
+  loginButton: {
+    backgroundColor: "#A98467",
+    borderRadius: 18,
     paddingVertical: 15,
-    flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 18,
+    shadowColor: "#A98467",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+    top: 25,
   },
-  registerButtonDisabled: {
-    opacity: 0.7,
-  },
-  registerButtonText: {
-    color: "white",
+  loginButtonText: {
+    color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
-    marginRight: 10,
+    letterSpacing: 1,
   },
-  loginContainer: {
+  registerContainer: {
     flexDirection: "row",
     justifyContent: "center",
+    marginTop: 6,
   },
-  loginText: {
-    color: "#666",
+  registerText: {
+    color: "#6C584C",
     fontSize: 14,
+    marginTop: 60,
   },
-  loginLink: {
-    color: "#2E8B57",
+  registerLink: {
+    color: "#ADC178",
     fontSize: 14,
+    fontWeight: "bold",
+    textDecorationLine: "underline",
+    marginTop: 60,
+  },
+  errorMessage: {
+    color: "#ff4444",
+    backgroundColor: "#ffeaea",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+    textAlign: "center",
     fontWeight: "bold",
   },
 });
