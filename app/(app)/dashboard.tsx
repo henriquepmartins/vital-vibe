@@ -279,7 +279,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
           <View style={styles.actionButtons}>
             <TouchableOpacity
               style={styles.primaryButton}
-              onPress={() => navigation.navigate("Agendamento")}
+              onPress={() => router.push("/consulta")}
             >
               <Ionicons
                 name="calendar-outline"
@@ -474,18 +474,19 @@ const styles = StyleSheet.create({
   logoContainer: {
     flexDirection: "row",
     alignItems: "center",
+    top: 6,
   },
   logoText: {
     fontSize: width > 500 ? 26 : 22,
     fontWeight: "bold",
     color: "white",
-    marginLeft: 8,
+    marginLeft: 4,
   },
   headerSubtitle: {
     fontSize: width > 500 ? 16 : 14,
     color: "rgba(255, 255, 255, 0.8)",
     marginLeft: 32,
-    marginTop: -2,
+    marginTop: 4,
   },
   headerRight: {
     flexDirection: "row",
