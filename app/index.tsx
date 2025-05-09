@@ -1,4 +1,20 @@
 "use client";
+
+// ─── POLYFILLS FOR NODE CORE MODULES ─────────────────────────────────────────
+import "react-native-get-random-values";
+import { Buffer } from "buffer";
+import process from "process";
+
+if (typeof global.Buffer === "undefined") {
+  // @ts-ignore
+  global.Buffer = Buffer;
+}
+if (typeof global.process === "undefined") {
+  // @ts-ignore
+  global.process = process;
+}
+// ───────────────────────────────────────────────────────────────────────────────
+
 import { useState } from "react";
 import {
   StyleSheet,
