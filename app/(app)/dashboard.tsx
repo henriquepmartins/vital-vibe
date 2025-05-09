@@ -180,7 +180,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.phoneContainer}>
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
@@ -433,7 +433,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
           <View style={styles.footer} />
         </ScrollView>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -443,25 +443,10 @@ const STATUSBAR_HEIGHT =
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F0EAD2",
-    alignItems: "center",
-    justifyContent: "center",
   },
   phoneContainer: {
-    width: "100%",
-    height: "100%",
-    minHeight: height * 0.8,
-    borderRadius: 30,
-    overflow: "hidden",
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    marginTop: Platform.OS === "ios" ? 10 : 20,
-    elevation: 10,
     flex: 1,
-    bottom: 10,
+    backgroundColor: "#FFFFFF",
   },
   scrollContainer: {
     flexGrow: 1,
@@ -473,8 +458,8 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     paddingTop: Platform.OS === "ios" ? 50 : STATUSBAR_HEIGHT + 10,
-    paddingBottom: width > 500 ? 50 : 40,
-    paddingHorizontal: width > 500 ? 30 : 20,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
     position: "relative",
   },
   headerTop: {
@@ -564,6 +549,7 @@ const styles = StyleSheet.create({
   greetingContainer: {
     flex: 1,
     alignItems: "flex-start",
+    bottom: 10,
   },
   greeting: {
     fontSize: width > 500 ? 18 : 16,

@@ -257,7 +257,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#FF4444",
     marginTop: 30,
-    width: "100%",
   },
   logoutText: {
     color: "#FF4444",
