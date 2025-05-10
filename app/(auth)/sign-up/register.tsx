@@ -11,6 +11,7 @@ import {
   Image,
   SafeAreaView,
   Dimensions,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -95,44 +96,72 @@ export default function RegisterScreen() {
   }
 
   async function handleSignUp() {
-    setLoading(true);
     setErrorMessage("");
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name, cpf: cpf, email: email },
-      },
-    });
-    if (error) {
-      setErrorMessage(error.message);
-      setLoading(false);
+
+    // Validate required fields
+    if (
+      !name ||
+      !email ||
+      !cpf ||
+      !phone ||
+      !birthdate ||
+      !height ||
+      !weight ||
+      !password
+    ) {
+      setErrorMessage("Preencha todos os campos.");
       return;
     }
-    const user = data.user;
-    if (user) {
-      const birthdateISO = formatBirthdateToISO(birthdate);
-      const { error: insertError } = await supabase.from("users").insert([
-        {
-          id: user.id,
-          name,
-          email,
-          cpf: cpf.replace(/\D/g, ""),
-          phone,
-          birthdate: birthdateISO,
-          avatar_url: avatarUrl,
-          height: height ? Number(height) : null,
-          weight: weight ? Number(weight) : null,
+
+    // Validate email format
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      setErrorMessage("Digite um email válido.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: {
+            name: name,
+            cpf: cpf,
+            phone: phone,
+            weight: weight,
+            height: height,
+            birthdate: formatBirthdateToISO(birthdate),
+            avatar_url: avatarUrl,
+          },
         },
-      ]);
-      if (insertError) {
-        setErrorMessage(insertError.message);
-        setLoading(false);
+      });
+
+      if (error) {
+        if (error.message.toLowerCase().includes("invalid login credentials")) {
+          setErrorMessage("Email ou senha incorretos.");
+        } else {
+          setErrorMessage(error.message);
+        }
         return;
       }
+
+      if (!session) {
+        Alert.alert(
+          "Verificação de Email",
+          "Por favor, verifique seu email para confirmar o cadastro!"
+        );
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      setErrorMessage("Erro inesperado. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
-    router.replace("/dashboard");
-    setLoading(false);
   }
 
   return (

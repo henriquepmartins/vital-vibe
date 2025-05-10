@@ -1,3 +1,3 @@
-export const supabaseUrl = "https://ijbfnqklidnbhomiazzh.supabase.co";
+export const supabaseUrl = "https://putawdhkyrexputbxini.supabase.co";
 export const supabaseAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqYmZucWtsaWRuYmhvbWlhenpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MDY5NjMsImV4cCI6MjA2MjI4Mjk2M30.5qy_d97kx8zBHJBBozL_zMUPG-c3G4RmMuYxwjXBdWc";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1dGF3ZGhreXJleHB1dGJ4aW5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4OTQyNjcsImV4cCI6MjA2MjQ3MDI2N30.nE5dK9BVgR39oRDL8qkZ3AFjgSK22pgg0fbGtztyJ_M";
