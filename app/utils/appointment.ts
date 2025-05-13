@@ -71,3 +71,11 @@ export const formatDate = (dateString: string): string => {
     day: "numeric",
   });
 };
+
+const appointmentUtils = {
+  getAvailableTimeSlots,
+  formatDate,
+  NUTRITIONIST,
+};
+
+export default appointmentUtils;

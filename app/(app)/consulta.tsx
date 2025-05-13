@@ -10,22 +10,19 @@ import {
 } from "react-native";
 import { type DateData } from "react-native-calendars";
 
-import AppointmentHeader from "../components/appointment/AppointmentHeader";
-import AppointmentSteps from "../components/appointment/AppointmentSteps";
-import AppointmentCalendar from "../components/appointment/AppointmentCalendar";
-import DurationSelector from "../components/appointment/DurationSelector";
-import TimeSlots from "../components/appointment/TimeSlots";
-import AppointmentSummary from "../components/appointment/AppointmentSummary";
-import AppointmentTypes from "../components/appointment/AppointmentTypes";
-import ReminderOptions from "../components/appointment/ReminderOptions";
-import CancellationPolicy from "../components/appointment/CancellationPolicy";
-import StepButtons from "../components/appointment/StepButtons";
-
-// Import types
-import type { AppointmentDuration } from "../components/appointment/DurationSelector";
-import type { AppointmentType } from "../components/appointment/AppointmentTypes";
-import type { ReminderTime } from "../components/appointment/ReminderOptions";
-import type { TimeSlot } from "../components/appointment/TimeSlots";
+import {
+  DurationSelector,
+  type AppointmentDuration,
+} from "../components/appointment/DurationSelector";
+import {
+  AppointmentTypes,
+  type AppointmentType,
+} from "../components/appointment/AppointmentTypes";
+import {
+  ReminderOptions,
+  type ReminderTime,
+} from "../components/appointment/ReminderOptions";
+import { TimeSlots, type TimeSlot } from "../components/appointment/TimeSlots";
 
 import { COLORS } from "../constants/Colors";
 import {
@@ -33,8 +30,15 @@ import {
   formatDate,
   NUTRITIONIST,
 } from "../utils/appointment";
-import React from "react";
 import { router } from "expo-router";
+import { supabase } from "@/lib/supabase";
+import React from "react";
+import AppointmentCalendar from "../components/appointment/AppointmentCalendar";
+import StepButtons from "../components/appointment/StepButtons";
+import AppointmentSummary from "../components/appointment/AppointmentSummary";
+import CancellationPolicy from "../components/appointment/CancellationPolicy";
+import AppointmentHeader from "../components/appointment/AppointmentHeader";
+import AppointmentSteps from "../components/appointment/AppointmentSteps";
 
 const AppointmentScreen = ({ navigation }: any) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -99,24 +103,64 @@ const AppointmentScreen = ({ navigation }: any) => {
     return timeSlots.find((slot) => slot.id === id);
   };
 
-  const handleScheduleAppointment = () => {
-    Alert.alert(
-      "Consulta Agendada",
-      `Sua consulta foi agendada para ${formatDate(selectedDate)} às ${
-        getTimeSlotById(selectedTimeSlot)?.time
-      }.`,
-      [
-        {
-          text: "OK",
-          onPress: () => {
-            router.push("/dashboard");
-          },
-        },
-      ]
+  const handleScheduleAppointment = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      Alert.alert("Erro", "Usuário não autenticado.");
+      return;
+    }
+
+    const slot = getTimeSlotById(selectedTimeSlot);
+
+    const durationNumber = Number(
+      String(appointmentDuration).replace(/\D/g, "")
     );
+
+    let startTime = slot?.time || null;
+    if (startTime && startTime.length === 5) {
+      startTime = startTime + ":00";
+    }
+
+    const appointmentData = {
+      user_id: userId,
+      appointment_type: appointmentType,
+      date: selectedDate,
+      start_time: startTime,
+      duration: durationNumber,
+      status: "scheduled",
+      reminder_type: "push",
+      reminder_time: new Date(selectedDate + "T" + startTime).toISOString(),
+    };
+
+    console.log("Dados enviados para o Supabase:", appointmentData);
+
+    try {
+      const { data, error } = await supabase
+        .from("appointments")
+        .insert([appointmentData])
+        .select();
+
+      if (error) {
+        console.error("Erro ao agendar:", error);
+        Alert.alert(
+          "Erro ao agendar",
+          error.message + (error.details ? `\n${error.details}` : "")
+        );
+        return;
+      }
+
+      console.log("Consulta agendada com sucesso:", data);
+      router.push("/ConsultaAgendada");
+    } catch (err) {
+      console.error("Erro inesperado:", err);
+      Alert.alert("Erro", "Ocorreu um erro inesperado ao agendar a consulta.");
+    }
   };
 
-  // Render step 1: Date and time selection
   const renderStep1 = () => (
     <>
       <AppointmentCalendar
@@ -151,7 +195,6 @@ const AppointmentScreen = ({ navigation }: any) => {
     </>
   );
 
-  // Render step 2: Appointment details
   const renderStep2 = () => (
     <>
       <AppointmentSummary

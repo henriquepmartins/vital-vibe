@@ -1,12 +1,11 @@
 import { Stack } from "expo-router";
-import { AuthGuard } from "@/components/AuthGuard";
 
 export default function AppLayout() {
   return (
-    <AuthGuard>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="dashboard" options={{ headerShown: false }} />
-      </Stack>
-    </AuthGuard>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+      <Stack.Screen name="consulta" options={{ headerShown: false }} />
+      <Stack.Screen name="ConsultaAgendada" options={{ headerShown: false }} />
+    </Stack>
   );
 }
