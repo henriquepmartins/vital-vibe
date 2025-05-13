@@ -20,30 +20,6 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { supabase } from "@/lib/supabase";
 import { router } from "expo-router";
 
-const upcomingAppointments: Appointment[] = [
-  {
-    id: "1",
-    name: "Maria Silva",
-    date: "22/03/2025",
-    time: "10:00",
-    status: "confirmado",
-  },
-  {
-    id: "2",
-    name: "João Santos",
-    date: "22/03/2025",
-    time: "14:30",
-    status: "pendente",
-  },
-  {
-    id: "3",
-    name: "Ana Oliveira",
-    date: "23/03/2025",
-    time: "09:15",
-    status: "confirmado",
-  },
-];
-
 const availableSlots = [
   { id: "1", period: "Manhã", time: "11:00" },
   { id: "2", period: "Tarde", time: "14:00" },
@@ -77,16 +53,21 @@ type DashboardScreenProps = {
 
 type Appointment = {
   id: string;
-  name: string;
   date: string;
-  time: string;
-  status: "confirmado" | "pendente";
+  start_time: string;
+  appointment_type: string;
+  status: string;
+  duration: number;
 };
 
 const { width, height } = Dimensions.get("window");
 
 export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   const [waterProgress, setWaterProgress] = useState(2);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<
+    Appointment[]
+  >([]);
+  const [loading, setLoading] = useState(true);
   const totalWaterGoal = 8;
   const [greeting, setGreeting] = useState("Bom dia");
   const [currentDate, setCurrentDate] = useState("");
@@ -136,47 +117,210 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
     fetchUserName();
   }, []);
 
-  const renderAppointmentItem = ({ item }: { item: Appointment }) => (
-    <View style={styles.appointmentCard}>
-      <View style={styles.appointmentInfo}>
-        <Text style={styles.appointmentName}>{item.name}</Text>
-        <Text style={styles.appointmentDate}>
-          {item.date} às {item.time}
-        </Text>
-      </View>
-      <View style={styles.appointmentActions}>
-        <View
-          style={[
-            styles.statusBadge,
-            {
-              backgroundColor:
-                item.status === "confirmado" ? "#E8F5E9" : "#FFF8E1",
-              borderColor: item.status === "confirmado" ? "#ADC178" : "#FFC107",
-            },
-          ]}
-        >
-          <Text
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
+      if (!userId) {
+        console.error("Usuário não autenticado");
+        setUpcomingAppointments([]);
+        return;
+      }
+
+      const today = new Date().toISOString().split("T")[0];
+
+      // Buscar apenas as consultas futuras
+      const { data, error } = await supabase
+        .from("appointments")
+        .select(
+          `
+          id,
+          user_id,
+          appointment_type,
+          date,
+          start_time,
+          duration,
+          status,
+          reminder_type,
+          reminder_time,
+          created_at,
+          updated_at
+        `
+        )
+        .eq("user_id", userId)
+        .gte("date", today)
+        .order("date", { ascending: true })
+        .order("start_time", { ascending: true });
+
+      if (error) {
+        console.error("Erro ao buscar consultas:", error);
+        // Aqui você pode adicionar um toast ou alerta para o usuário
+        setUpcomingAppointments([]);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        console.log("Nenhuma consulta futura encontrada");
+        setUpcomingAppointments([]);
+        return;
+      }
+
+      setUpcomingAppointments(data);
+    } catch (error) {
+      console.error("Erro ao buscar consultas:", error);
+      setUpcomingAppointments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    console.log("Estado atual das consultas:", upcomingAppointments);
+  }, [upcomingAppointments]);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const options = { weekday: "long", day: "numeric", month: "long" } as const;
+    const formattedDate = date.toLocaleDateString("pt-BR", options);
+
+    // Capitalize the first letter of the weekday
+    const [weekday, ...rest] = formattedDate.split(" ");
+    const capitalizedWeekday =
+      weekday.charAt(0).toUpperCase() + weekday.slice(1);
+
+    return `${capitalizedWeekday} ${rest.join(" ")}`;
+  };
+
+  const formatTime = (timeString: string) => {
+    return timeString.substring(0, 5);
+  };
+
+  const getAppointmentTypeLabel = (type: string) => {
+    const types: { [key: string]: string } = {
+      initial: "Avaliação Inicial",
+      followup: "Consulta de Acompanhamento",
+      assessment: "Avaliação Física",
+      consultation: "Orientação Nutricional",
+    };
+    return types[type] || type;
+  };
+
+  const getAppointmentDescription = (type: string) => {
+    const descriptions: { [key: string]: string } = {
+      initial:
+        "Primeira consulta para avaliação completa e definição de objetivos",
+      followup: "Acompanhamento de progresso e ajustes no plano alimentar",
+      assessment: "Medições antropométricas e avaliação de composição corporal",
+      consultation: "Esclarecimento de dúvidas e orientações específicas",
+    };
+    return descriptions[type] || "";
+  };
+
+  const renderAppointmentItem = ({ item }: { item: Appointment }) => {
+    const formattedDate = formatDate(item.date);
+    const formattedTime = formatTime(item.start_time);
+    const appointmentType = getAppointmentTypeLabel(item.appointment_type);
+    const appointmentDescription = getAppointmentDescription(
+      item.appointment_type
+    );
+
+    return (
+      <View style={styles.appointmentCard}>
+        <View style={styles.appointmentInfo}>
+          <Text style={styles.appointmentName}>{appointmentType}</Text>
+          <Text style={styles.appointmentDescription}>
+            {appointmentDescription}
+          </Text>
+          <View style={styles.appointmentDateTime}>
+            <View style={styles.dateTimeItem}>
+              <Ionicons name="calendar-outline" size={16} color="#666666" />
+              <Text style={styles.appointmentDate}>{formattedDate}</Text>
+            </View>
+            <View style={styles.dateTimeItem}>
+              <Ionicons name="time-outline" size={16} color="#666666" />
+              <Text style={styles.appointmentTime}>{formattedTime}</Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.appointmentActions}>
+          <View
             style={[
-              styles.statusText,
-              { color: item.status === "confirmado" ? "#ADC178" : "#FFC107" },
+              styles.statusBadge,
+              {
+                backgroundColor:
+                  item.status === "scheduled" ? "#E8F5E9" : "#FFF8E1",
+                borderColor:
+                  item.status === "scheduled" ? "#ADC178" : "#FFC107",
+              },
             ]}
           >
-            {item.status === "confirmado" ? "Confirmado" : "Pendente"}
-          </Text>
+            <Text
+              style={[
+                styles.statusText,
+                { color: item.status === "scheduled" ? "#ADC178" : "#FFC107" },
+              ]}
+            >
+              {item.status === "scheduled" ? "Confirmado" : "Pendente"}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push("/consulta")}
+          >
+            <Text style={styles.actionButtonText}>
+              {item.status === "scheduled" ? "Reagendar" : "Confirmar"}
+            </Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionButtonText}>
-            {item.status === "confirmado" ? "Reagendar" : "Confirmar"}
-          </Text>
-        </TouchableOpacity>
       </View>
-    </View>
-  );
+    );
+  };
 
   const handleWaterIntake = (id: string) => {
     const newWaterProgress =
       waterProgress < totalWaterGoal ? waterProgress + 1 : waterProgress;
     setWaterProgress(newWaterProgress);
+  };
+
+  const renderAppointments = () => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Carregando consultas...</Text>
+        </View>
+      );
+    }
+
+    if (upcomingAppointments.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Nenhuma consulta agendada</Text>
+          <TouchableOpacity
+            style={styles.scheduleButton}
+            onPress={() => router.push("/consulta")}
+          >
+            <Text style={styles.scheduleButtonText}>Agendar Consulta</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        data={upcomingAppointments}
+        renderItem={renderAppointmentItem}
+        keyExtractor={(item) => item.id}
+        scrollEnabled={false}
+      />
+    );
   };
 
   return (
@@ -312,12 +456,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
                 <Text style={styles.seeAllText}>Ver todas</Text>
               </TouchableOpacity>
             </View>
-            <FlatList
-              data={upcomingAppointments}
-              renderItem={renderAppointmentItem}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-            />
+            {renderAppointments()}
           </View>
 
           <View style={styles.sectionContainer}>
@@ -658,17 +797,17 @@ const styles = StyleSheet.create({
     marginRight: width > 500 ? 10 : 8,
   },
   sectionContainer: {
-    marginBottom: width > 500 ? 25 : 20,
+    marginBottom: width > 500 ? 30 : 25,
     paddingHorizontal: width > 500 ? 25 : 20,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: width > 500 ? 15 : 10,
+    marginBottom: width > 500 ? 20 : 15,
   },
   sectionTitle: {
-    fontSize: width > 500 ? 20 : 18,
+    fontSize: width > 500 ? 22 : 20,
     fontWeight: "bold",
     color: "#333333",
   },
@@ -679,51 +818,82 @@ const styles = StyleSheet.create({
   },
   appointmentCard: {
     backgroundColor: "white",
-    borderRadius: 10,
-    padding: width > 500 ? 20 : 15,
-    marginBottom: width > 500 ? 15 : 10,
+    borderRadius: 15,
+    padding: width > 500 ? 25 : 20,
+    marginBottom: width > 500 ? 20 : 15,
+    marginHorizontal: width > 500 ? 5 : 0,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   appointmentInfo: {
-    marginBottom: width > 500 ? 15 : 10,
+    marginBottom: width > 500 ? 20 : 15,
   },
   appointmentName: {
-    fontSize: width > 500 ? 18 : 16,
+    fontSize: width > 500 ? 20 : 18,
     fontWeight: "bold",
     color: "#333333",
+    marginBottom: 8,
+  },
+  appointmentDescription: {
+    fontSize: width > 500 ? 15 : 14,
+    color: "#666666",
+    marginBottom: width > 500 ? 15 : 12,
+    lineHeight: width > 500 ? 22 : 20,
+  },
+  appointmentDateTime: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: width > 500 ? 20 : 15,
+    backgroundColor: "#F8F9FA",
+    padding: width > 500 ? 15 : 12,
+    borderRadius: 10,
+  },
+  dateTimeItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   appointmentDate: {
     fontSize: width > 500 ? 15 : 14,
-    color: "#666666",
-    marginTop: 2,
+    color: "#444444",
+    fontWeight: "500",
+  },
+  appointmentTime: {
+    fontSize: width > 500 ? 15 : 14,
+    color: "#444444",
+    fontWeight: "500",
   },
   appointmentActions: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    borderTopWidth: 1,
+    borderTopColor: "#EEEEEE",
+    paddingTop: width > 500 ? 15 : 12,
   },
   statusBadge: {
-    paddingHorizontal: width > 500 ? 12 : 10,
-    paddingVertical: width > 500 ? 6 : 5,
-    borderRadius: 5,
+    paddingHorizontal: width > 500 ? 15 : 12,
+    paddingVertical: width > 500 ? 8 : 6,
+    borderRadius: 8,
     borderWidth: 1,
   },
   statusText: {
-    fontSize: width > 500 ? 13 : 12,
-    fontWeight: "500",
+    fontSize: width > 500 ? 14 : 13,
+    fontWeight: "600",
   },
   actionButton: {
-    paddingHorizontal: width > 500 ? 12 : 10,
-    paddingVertical: width > 500 ? 6 : 5,
+    paddingHorizontal: width > 500 ? 15 : 12,
+    paddingVertical: width > 500 ? 8 : 6,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 8,
   },
   actionButtonText: {
     color: "#6C584C",
-    fontWeight: "500",
-    fontSize: width > 500 ? 13 : 12,
+    fontWeight: "600",
+    fontSize: width > 500 ? 14 : 13,
   },
   timeSlotGrid: {
     flexDirection: "row",
@@ -853,5 +1023,47 @@ const styles = StyleSheet.create({
   },
   footer: {
     height: width > 500 ? 25 : 20,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: width > 500 ? 16 : 14,
+    color: "#666666",
+  },
+  emptyContainer: {
+    padding: width > 500 ? 30 : 25,
+    alignItems: "center",
+    backgroundColor: "white",
+    borderRadius: 15,
+    marginHorizontal: width > 500 ? 5 : 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  emptyText: {
+    fontSize: width > 500 ? 17 : 15,
+    color: "#666666",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  scheduleButton: {
+    backgroundColor: "#ADC178",
+    paddingHorizontal: width > 500 ? 25 : 20,
+    paddingVertical: width > 500 ? 12 : 10,
+    borderRadius: 10,
+    shadowColor: "#ADC178",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  scheduleButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: width > 500 ? 15 : 13,
   },
 });

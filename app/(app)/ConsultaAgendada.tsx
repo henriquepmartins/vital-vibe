@@ -53,6 +53,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: COLORS.taupe,
     marginBottom: 32,
+    marginHorizontal: 20,
     textAlign: "center",
   },
   button: {
