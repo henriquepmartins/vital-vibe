@@ -87,7 +87,6 @@ export default function RegisterScreen() {
   }
 
   function formatBirthdateToISO(date: string) {
-    // de DD/MM/AAAA para AAAA-MM-DD
     const [day, month, year] = date.split("/");
     if (day && month && year) {
       return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
@@ -98,7 +97,6 @@ export default function RegisterScreen() {
   async function handleSignUp() {
     setErrorMessage("");
 
-    // Validate required fields
     if (
       !name ||
       !email ||
@@ -113,7 +111,6 @@ export default function RegisterScreen() {
       return;
     }
 
-    // Validate email format
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
       setErrorMessage("Digite um email válido.");
       return;

@@ -18,7 +18,8 @@ const ConsultaAgendada = () => {
       </View>
       <Text style={styles.title}>Consulta Agendada!</Text>
       <Text style={styles.subtitle}>
-        Sua consulta foi agendada com sucesso.
+        Sua consulta foi agendada com sucesso. Você receberá um lembrete antes
+        do horário marcado.
       </Text>
       <TouchableOpacity
         style={styles.button}

@@ -68,13 +68,37 @@ const AppointmentScreen = ({ navigation }: any) => {
   }
 
   useEffect(() => {
-    if (selectedDate) {
-      setLoading(true);
-      setTimeout(() => {
-        setTimeSlots(getAvailableTimeSlots(selectedDate, appointmentDuration));
+    const fetchAndSetTimeSlots = async () => {
+      if (selectedDate) {
+        setLoading(true);
+        const { data: appointments, error } = await supabase
+          .from("appointments")
+          .select("start_time")
+          .eq("date", selectedDate);
+        if (error) {
+          setLoading(false);
+          Alert.alert("Erro", "Erro ao buscar horários agendados.");
+          return;
+        }
+        const bookedTimes = (appointments || []).map((a) => {
+          return a.start_time && a.start_time.length === 5
+            ? a.start_time + ":00"
+            : a.start_time;
+        });
+        const slots = getAvailableTimeSlots(
+          selectedDate,
+          appointmentDuration
+        ).map((slot) => ({
+          ...slot,
+          available: !bookedTimes.includes(
+            slot.time.length === 5 ? slot.time + ":00" : slot.time
+          ),
+        }));
+        setTimeSlots(slots);
         setLoading(false);
-      }, 500);
-    }
+      }
+    };
+    fetchAndSetTimeSlots();
   }, [selectedDate, appointmentDuration]);
 
   const handleDateSelect = (day: DateData) => {
@@ -108,23 +132,35 @@ const AppointmentScreen = ({ navigation }: any) => {
       data: { session },
     } = await supabase.auth.getSession();
     const userId = session?.user?.id;
-
     if (!userId) {
       Alert.alert("Erro", "Usuário não autenticado.");
       return;
     }
-
     const slot = getTimeSlotById(selectedTimeSlot);
-
     const durationNumber = Number(
       String(appointmentDuration).replace(/\D/g, "")
     );
-
     let startTime = slot?.time || null;
     if (startTime && startTime.length === 5) {
       startTime = startTime + ":00";
     }
-
+    const { data: existingAppointments, error: fetchError } = await supabase
+      .from("appointments")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("date", selectedDate)
+      .eq("start_time", startTime);
+    if (fetchError) {
+      Alert.alert("Erro", "Erro ao verificar agendamentos existentes.");
+      return;
+    }
+    if (existingAppointments && existingAppointments.length > 0) {
+      Alert.alert(
+        "Horário indisponível",
+        "Você já possui uma consulta agendada nesse horário."
+      );
+      return;
+    }
     const appointmentData = {
       user_id: userId,
       appointment_type: appointmentType,
@@ -135,15 +171,12 @@ const AppointmentScreen = ({ navigation }: any) => {
       reminder_type: "push",
       reminder_time: new Date(selectedDate + "T" + startTime).toISOString(),
     };
-
     console.log("Dados enviados para o Supabase:", appointmentData);
-
     try {
       const { data, error } = await supabase
         .from("appointments")
         .insert([appointmentData])
         .select();
-
       if (error) {
         console.error("Erro ao agendar:", error);
         Alert.alert(
@@ -152,7 +185,6 @@ const AppointmentScreen = ({ navigation }: any) => {
         );
         return;
       }
-
       console.log("Consulta agendada com sucesso:", data);
       router.push("/ConsultaAgendada");
     } catch (err) {
@@ -168,14 +200,12 @@ const AppointmentScreen = ({ navigation }: any) => {
         handleDateSelect={handleDateSelect}
         markedDates={markedDates}
       />
-
       {selectedDate && (
         <>
           <DurationSelector
             appointmentDuration={appointmentDuration}
             handleDurationSelect={handleDurationSelect}
           />
-
           <TimeSlots
             selectedDate={selectedDate}
             selectedTimeSlot={selectedTimeSlot}
@@ -186,7 +216,6 @@ const AppointmentScreen = ({ navigation }: any) => {
           />
         </>
       )}
-
       <StepButtons
         currentStep={currentStep}
         setCurrentStep={setCurrentStep}
@@ -205,19 +234,15 @@ const AppointmentScreen = ({ navigation }: any) => {
         getTimeSlotById={getTimeSlotById}
         nutritionist={NUTRITIONIST}
       />
-
       <AppointmentTypes
         appointmentType={appointmentType}
         handleAppointmentTypeSelect={handleAppointmentTypeSelect}
       />
-
       <ReminderOptions
         reminderTime={reminderTime}
         handleReminderSelect={handleReminderSelect}
       />
-
       <CancellationPolicy />
-
       <StepButtons
         currentStep={currentStep}
         setCurrentStep={setCurrentStep}
@@ -233,9 +258,7 @@ const AppointmentScreen = ({ navigation }: any) => {
         currentStep={currentStep}
         setCurrentStep={setCurrentStep}
       />
-
       <AppointmentSteps currentStep={currentStep} />
-
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
