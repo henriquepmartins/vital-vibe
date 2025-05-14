@@ -124,7 +124,7 @@ export default function ProfileScreen() {
     if (!bmi) return null;
     const numBMI = parseFloat(bmi);
     if (numBMI < 18.5) return { status: "Abaixo do peso", color: "#FFB347" };
-    if (numBMI < 25) return { status: "Peso normal", color: "#77DD77" };
+    if (numBMI < 25) return { status: "Peso normal", color: "#ADC178" };
     if (numBMI < 30) return { status: "Sobrepeso", color: "#FFB347" };
     return { status: "Obesidade", color: "#FF6961" };
   }
@@ -141,7 +141,10 @@ export default function ProfileScreen() {
         >
           <Ionicons name="arrow-back" size={28} color="#ADC178" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Perfil</Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>Perfil</Text>
+          <View style={styles.headerUnderline} />
+        </View>
         <TouchableOpacity
           style={styles.editButton}
           onPress={() => router.push("/edit-profile" as any)}
@@ -277,31 +280,59 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
+    paddingTop: 16,
+    paddingBottom: 16,
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#EEEEEE",
-    elevation: 2,
+    borderBottomColor: "#F0F0F0",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    position: "relative",
+    overflow: "hidden",
+  },
+  backButton: {
+    padding: 10,
+    borderRadius: 22,
+    backgroundColor: "#F8F9FA",
+    zIndex: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
+    elevation: 2,
   },
-  backButton: {
-    padding: 6,
+  headerTitleContainer: {
+    alignItems: "center",
+    flex: 1,
+    zIndex: 2,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#333333",
-    flex: 1,
     textAlign: "center",
-    marginLeft: -28,
+  },
+  headerUnderline: {
+    height: 3,
+    width: 80,
+    marginTop: 4,
+    borderRadius: 1.5,
   },
   editButton: {
-    padding: 6,
+    padding: 10,
+    borderRadius: 22,
+    backgroundColor: "#F8F9FA",
+    zIndex: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   profileHeaderSection: {
     flexDirection: "row",
