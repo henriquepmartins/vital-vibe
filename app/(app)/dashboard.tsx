@@ -162,7 +162,6 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
 
       if (error) {
         console.error("Erro ao buscar consultas:", error);
-        // Aqui você pode adicionar um toast ou alerta para o usuário
         setUpcomingAppointments([]);
         return;
       }
@@ -191,7 +190,6 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
     const options = { weekday: "long", day: "numeric", month: "long" } as const;
     const formattedDate = date.toLocaleDateString("pt-BR", options);
 
-    // Capitalize the first letter of the weekday
     const [weekday, ...rest] = formattedDate.split(" ");
     const capitalizedWeekday =
       weekday.charAt(0).toUpperCase() + weekday.slice(1);
@@ -449,7 +447,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
 
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Próximas Consultas</Text>
+              <Text style={styles.sectionTitle}>Minhas Consultas</Text>
               <TouchableOpacity
                 onPress={() => navigation.navigate("Agendamento")}
               >
@@ -457,21 +455,6 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
               </TouchableOpacity>
             </View>
             {renderAppointments()}
-          </View>
-
-          <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Horários Disponíveis Hoje</Text>
-            </View>
-            <View style={styles.timeSlotGrid}>
-              {availableSlots.map((slot) => (
-                <TouchableOpacity key={slot.id} style={styles.timeSlot}>
-                  <Text style={styles.timeSlotPeriod}>
-                    {slot.period} - {slot.time}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
           </View>
 
           <View style={styles.sectionContainer}>
@@ -541,7 +524,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.sectionContainer}>
+          <View style={styles.chatSectionContainer}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Dúvidas Rápidas?</Text>
             </View>
@@ -799,6 +782,11 @@ const styles = StyleSheet.create({
   sectionContainer: {
     marginBottom: width > 500 ? 30 : 25,
     paddingHorizontal: width > 500 ? 25 : 20,
+  },
+  chatSectionContainer: {
+    marginBottom: width > 500 ? 30 : 25,
+    paddingHorizontal: width > 500 ? 25 : 20,
+    marginTop: width > 500 ? 40 : 30,
   },
   sectionHeader: {
     flexDirection: "row",

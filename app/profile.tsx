@@ -8,13 +8,31 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  Dimensions,
 } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
+interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  cpf: string;
+  phone: string;
+  birthdate: string;
+  avatar_url: string;
+  height: number;
+  weight: number;
+}
+
+interface BMIStatus {
+  status: string;
+  color: string;
+}
+
 export default function ProfileScreen() {
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -42,7 +60,7 @@ export default function ProfileScreen() {
       if (error) {
         setError(error.message);
       } else {
-        setUserData(data);
+        setUserData(data as UserData);
       }
       setLoading(false);
     }
@@ -60,27 +78,30 @@ export default function ProfileScreen() {
   if (error) {
     return (
       <SafeAreaView style={styles.centered}>
-        <Text style={{ color: "#ff4444" }}>{error}</Text>
+        <Text style={styles.errorText}>{error}</Text>
       </SafeAreaView>
     );
   }
 
-  function capitalizeName(name?: string) {
+  function capitalizeName(name: string | undefined): string {
     if (!name) return "";
     return name
       .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map(
+        (word: string) =>
+          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      )
       .join(" ");
   }
 
-  function formatCPF(cpf?: string) {
+  function formatCPF(cpf: string | undefined): string {
     if (!cpf) return "-";
     const cleaned = cpf.replace(/\D/g, "");
     if (cleaned.length !== 11) return cpf;
     return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
   }
 
-  function formatDateBR(dateString?: string) {
+  function formatDateBR(dateString: string | undefined): string {
     if (!dateString) return "-";
     const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (!match) return dateString;
@@ -88,19 +109,49 @@ export default function ProfileScreen() {
     return `${day}/${month}/${year}`;
   }
 
+  function calculateBMI(): string | null {
+    if (userData?.height && userData?.weight) {
+      const heightInMeters = userData.height / 100;
+      const bmi = (userData.weight / (heightInMeters * heightInMeters)).toFixed(
+        1
+      );
+      return bmi;
+    }
+    return null;
+  }
+
+  function getBMIStatus(bmi: string | null): BMIStatus | null {
+    if (!bmi) return null;
+    const numBMI = parseFloat(bmi);
+    if (numBMI < 18.5) return { status: "Abaixo do peso", color: "#FFB347" };
+    if (numBMI < 25) return { status: "Peso normal", color: "#77DD77" };
+    if (numBMI < 30) return { status: "Sobrepeso", color: "#FFB347" };
+    return { status: "Obesidade", color: "#FF6961" };
+  }
+
+  const bmi = calculateBMI();
+  const bmiStatus = getBMIStatus(bmi);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.push("/dashboard")}
+          onPress={() => router.push("/dashboard" as any)}
         >
           <Ionicons name="arrow-back" size={28} color="#ADC178" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Perfil</Text>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => router.push("/edit-profile" as any)}
+        >
+          <Ionicons name="pencil" size={24} color="#ADC178" />
+        </TouchableOpacity>
       </View>
+
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.profileSection}>
+        <View style={styles.profileHeaderSection}>
           <View style={styles.profileImageContainer}>
             {userData?.avatar_url ? (
               <Image
@@ -108,60 +159,100 @@ export default function ProfileScreen() {
                 style={styles.profileImage}
               />
             ) : (
-              <Ionicons name="person-circle" size={100} color="#ADC178" />
+              <View style={styles.avatarPlaceholder}>
+                <Ionicons name="person" size={50} color="#FFFFFF" />
+              </View>
             )}
           </View>
-          <Text style={styles.profileName}>
-            {capitalizeName(userData?.name)}
-          </Text>
-          <Text style={styles.profileEmail}>{userData?.email}</Text>
+          <View style={styles.nameContainer}>
+            <Text style={styles.profileName}>
+              {capitalizeName(userData?.name)}
+            </Text>
+            <Text style={styles.profileEmail}>{userData?.email}</Text>
+          </View>
         </View>
+
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{userData?.height || "-"}</Text>
+            <Text style={styles.statLabel}>Altura (cm)</Text>
+          </View>
+          <View style={[styles.statItem, styles.statDivider]}>
+            <Text style={styles.statValue}>{userData?.weight || "-"}</Text>
+            <Text style={styles.statLabel}>Peso (kg)</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{bmi || "-"}</Text>
+            <Text style={styles.statLabel}>IMC</Text>
+          </View>
+        </View>
+
+        {bmi && bmiStatus && (
+          <View style={styles.bmiContainer}>
+            <Text style={styles.bmiLabel}>Status IMC:</Text>
+            <View
+              style={[
+                styles.bmiStatusBadge,
+                { backgroundColor: bmiStatus.color },
+              ]}
+            >
+              <Text style={styles.bmiStatusText}>{bmiStatus.status}</Text>
+            </View>
+          </View>
+        )}
+
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Informações Pessoais</Text>
-          <Text style={styles.infoLabel}>
-            CPF:{" "}
+          <View style={styles.sectionHeaderRow}>
+            <Ionicons name="person-outline" size={20} color="#ADC178" />
+            <Text style={styles.sectionTitle}>Informações Pessoais</Text>
+          </View>
+          <View style={styles.divider} />
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>CPF</Text>
             <Text style={styles.infoValue}>{formatCPF(userData?.cpf)}</Text>
-          </Text>
-          <Text style={styles.infoLabel}>
-            Telefone:{" "}
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Telefone</Text>
             <Text style={styles.infoValue}>{userData?.phone || "-"}</Text>
-          </Text>
-          <Text style={styles.infoLabel}>
-            Data de Nascimento:{" "}
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Data de Nascimento</Text>
             <Text style={styles.infoValue}>
               {formatDateBR(userData?.birthdate)}
             </Text>
-          </Text>
+          </View>
         </View>
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Dados Antropométricos</Text>
-          <Text style={styles.infoLabel}>
-            Altura (cm):{" "}
-            <Text style={styles.infoValue}>{userData?.height || "-"}</Text>
-          </Text>
-          <Text style={styles.infoLabel}>
-            Peso (kg):{" "}
-            <Text style={styles.infoValue}>{userData?.weight || "-"}</Text>
-          </Text>
-        </View>
-        <View>
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={async () => {
-              const { error } = await supabase.auth.signOut();
-              if (!error) {
-                router.replace("/");
-              }
-            }}
-          >
-            <Ionicons name="log-out-outline" size={24} color="#FF4444" />
-            <Text style={styles.logoutText}>Finalizar Sessão</Text>
-          </TouchableOpacity>
-        </View>
+
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={() => router.push("/settings" as any)}
+        >
+          <Ionicons name="settings-outline" size={22} color="#666666" />
+          <Text style={styles.settingsText}>Configurações</Text>
+          <Ionicons name="chevron-forward" size={22} color="#666666" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={async () => {
+            const { error } = await supabase.auth.signOut();
+            if (!error) {
+              router.replace("/");
+            }
+          }}
+        >
+          <Ionicons name="log-out-outline" size={22} color="#FFFFFF" />
+          <Text style={styles.logoutText}>Finalizar Sessão</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const { width } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
   container: {
@@ -169,8 +260,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
   },
   scrollContainer: {
-    padding: 20,
-    alignItems: "center",
+    padding: 16,
   },
   centered: {
     flex: 1,
@@ -178,88 +268,211 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#F5F5F5",
   },
-  profileSection: {
+  errorText: {
+    color: "#FF4444",
+    fontSize: 16,
+    textAlign: "center",
+    padding: 20,
+  },
+  header: {
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEEEEE",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  backButton: {
+    padding: 6,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333333",
+    flex: 1,
+    textAlign: "center",
+    marginLeft: -28,
+  },
+  editButton: {
+    padding: 6,
+  },
+  profileHeaderSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   profileImageContainer: {
-    marginBottom: 15,
+    marginRight: 16,
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    borderColor: "#ADC178",
+  },
+  avatarPlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#ADC178",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  nameContainer: {
+    flex: 1,
   },
   profileName: {
     fontSize: 22,
     fontWeight: "bold",
     color: "#333333",
-    marginBottom: 5,
+    marginBottom: 4,
   },
   profileEmail: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#666666",
-    marginBottom: 10,
   },
-  sectionContainer: {
-    backgroundColor: "white",
-    borderRadius: 10,
-    width: "100%",
-    padding: 20,
-    marginBottom: 15,
+  statsContainer: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 3,
+    elevation: 3,
   },
-  sectionTitle: {
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 14,
+  },
+  statDivider: {
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: "#EEEEEE",
+  },
+  statValue: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#333333",
-    marginBottom: 10,
+    marginBottom: 4,
   },
-  infoLabel: {
-    fontSize: 15,
+  statLabel: {
+    fontSize: 12,
     color: "#666666",
-    marginBottom: 6,
   },
-  infoValue: {
-    color: "#333333",
-    fontWeight: "bold",
-  },
-  header: {
+  bmiContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    paddingBottom: 10,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    marginBottom: 10,
+    marginBottom: 16,
+    paddingHorizontal: 8,
   },
-  backButton: {
-    padding: 6,
+  bmiLabel: {
+    fontSize: 14,
+    color: "#666666",
     marginRight: 10,
   },
-  headerTitle: {
-    fontSize: 20,
+  bmiStatusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  bmiStatusText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  sectionContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    width: "100%",
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 16,
     fontWeight: "bold",
-    color: "#333",
+    color: "#333333",
+    marginLeft: 8,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#EEEEEE",
+    marginBottom: 12,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: "#666666",
+  },
+  infoValue: {
+    fontSize: 14,
+    color: "#333333",
+    fontWeight: "500",
+  },
+  settingsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#FFFFFF",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  settingsText: {
+    fontSize: 16,
+    color: "#333333",
+    flex: 1,
+    marginLeft: 12,
   },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#FF4444",
-    marginTop: 30,
+    backgroundColor: "#E66356",
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 8,
+    marginBottom: 24,
   },
   logoutText: {
-    color: "#FF4444",
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 8,

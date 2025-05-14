@@ -1,6 +1,3 @@
-const tintColorLight = "#2f95dc";
-const tintColorDark = "#fff";
-
 const COLORS = {
   cream: "#F0EAD2",
   lightSage: "#DDE5B6",
