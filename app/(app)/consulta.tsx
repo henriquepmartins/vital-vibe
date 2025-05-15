@@ -40,6 +40,7 @@ import CancellationPolicy from "../components/appointment/CancellationPolicy";
 import AppointmentHeader from "../components/appointment/AppointmentHeader";
 import AppointmentSteps from "../components/appointment/AppointmentSteps";
 import { useChat } from "../contexts/ChatContext";
+import { useAppointment } from "../contexts/AppointmentContext";
 
 const AppointmentScreen = ({ navigation }: any) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -54,6 +55,7 @@ const AppointmentScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>("");
   const { updateAppointmentInfo } = useChat();
+  const { refreshAppointmentCount } = useAppointment();
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -202,6 +204,9 @@ const AppointmentScreen = ({ navigation }: any) => {
         appointmentDate: new Date(selectedDate),
         appointmentTime: startTime?.substring(0, 5) || "",
       });
+
+      // Atualiza o contador de consultas
+      await refreshAppointmentCount();
 
       router.push("/ConsultaAgendada");
     } catch (err) {

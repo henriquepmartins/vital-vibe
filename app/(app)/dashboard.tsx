@@ -19,6 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { supabase } from "@/lib/supabase";
 import { router } from "expo-router";
+import { useAppointment } from "../contexts/AppointmentContext";
 
 const availableSlots = [
   { id: "1", period: "Manhã", time: "11:00" },
@@ -72,6 +73,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   const [greeting, setGreeting] = useState("Bom dia");
   const [currentDate, setCurrentDate] = useState("");
   const [userName, setUserName] = useState<string>("");
+  const { appointmentCount } = useAppointment();
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -397,7 +399,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
                       />
                     </View>
                     <View>
-                      <Text style={styles.statValue}>3</Text>
+                      <Text style={styles.statValue}>{appointmentCount}</Text>
                       <Text style={styles.statLabel}>Consultas</Text>
                     </View>
                   </View>
