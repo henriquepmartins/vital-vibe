@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -9,8 +9,38 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { COLORS } from "../constants/Colors";
+import { useChat } from "../contexts/ChatContext";
+import { supabase } from "@/lib/supabase";
 
 const ConsultaAgendada = () => {
+  const { updateAppointmentInfo } = useChat();
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
+      if (userId) {
+        const { data: userData, error } = await supabase
+          .from("users")
+          .select("name, phone")
+          .eq("id", userId)
+          .single();
+
+        if (userData && !error) {
+          updateAppointmentInfo({
+            patientName: userData.name,
+            phoneNumber: userData.phone,
+          });
+        }
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.iconContainer}>

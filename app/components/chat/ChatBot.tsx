@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useChat } from "../../contexts/ChatContext";
 
 interface Message {
   id: string;
@@ -30,6 +31,7 @@ export const ChatBot = () => {
   const drawerAnimation = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
+  const { appointmentInfo } = useChat();
 
   const windowHeight = Dimensions.get("window").height;
   const drawerHeight = windowHeight * 0.7;
@@ -50,10 +52,13 @@ export const ChatBot = () => {
       "Nova conversa",
       "Tem certeza que deseja iniciar uma nova conversa? O histórico será apagado.",
       [
-        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Cancelar",
+          style: "destructive",
+        },
         {
           text: "Iniciar",
-          style: "destructive",
+          style: "default",
           onPress: () => {
             setMessages([
               {
@@ -71,6 +76,30 @@ export const ChatBot = () => {
     );
   };
 
+  const getSystemPrompt = () => {
+    let prompt =
+      "Você é um assistente de uma clínica de nutrição. Responda de forma simpática, clara e útil, lembrando o contexto da conversa.";
+
+    if (appointmentInfo.patientName) {
+      prompt += `\nInformações do agendamento atual:\n`;
+      prompt += `- Paciente: ${appointmentInfo.patientName}\n`;
+      if (appointmentInfo.appointmentType) {
+        prompt += `- Tipo de atendimento: ${appointmentInfo.appointmentType}\n`;
+      }
+      if (appointmentInfo.appointmentDate) {
+        prompt += `- Data: ${appointmentInfo.appointmentDate.toLocaleDateString()}\n`;
+      }
+      if (appointmentInfo.appointmentTime) {
+        prompt += `- Horário: ${appointmentInfo.appointmentTime}\n`;
+      }
+      if (appointmentInfo.phoneNumber) {
+        prompt += `- Telefone: ${appointmentInfo.phoneNumber}\n`;
+      }
+    }
+
+    return prompt;
+  };
+
   const sendMessage = async () => {
     if (inputText.trim()) {
       const userMessage: Message = {
@@ -86,8 +115,7 @@ export const ChatBot = () => {
         const history = [
           {
             role: "system",
-            content:
-              "Você é um assistente de uma clínica de nutrição. Responda de forma simpática, clara e útil, lembrando o contexto da conversa.",
+            content: getSystemPrompt(),
           },
           ...messages.map((msg) => ({
             role: msg.isBot ? "assistant" : "user",
