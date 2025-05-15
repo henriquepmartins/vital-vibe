@@ -10,6 +10,7 @@ import {
   Animated,
   Dimensions,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -42,6 +43,32 @@ export const ChatBot = () => {
       friction: 11,
     }).start();
     setIsDrawerOpen(!isDrawerOpen);
+  };
+
+  const handleNewConversation = () => {
+    Alert.alert(
+      "Nova conversa",
+      "Tem certeza que deseja iniciar uma nova conversa? O histórico será apagado.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Iniciar",
+          style: "destructive",
+          onPress: () => {
+            setMessages([
+              {
+                id: Date.now().toString(),
+                text: "Olá! Bem-vindo ao suporte da clínica. Como posso te ajudar hoje?",
+                isBot: true,
+                timestamp: new Date(),
+              },
+            ]);
+            setInputText("");
+            setLoading(false);
+          },
+        },
+      ]
+    );
   };
 
   const sendMessage = async () => {
@@ -148,9 +175,17 @@ export const ChatBot = () => {
         {/* Header */}
         <View style={styles.drawerHeader}>
           <Text style={styles.drawerTitle}>Chat da Clínica</Text>
-          <TouchableOpacity onPress={toggleDrawer}>
-            <Ionicons name="close" size={24} color="#333333" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TouchableOpacity
+              onPress={handleNewConversation}
+              style={{ marginRight: 12 }}
+            >
+              <Ionicons name="add" size={26} color="#ADC178" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={toggleDrawer}>
+              <Ionicons name="close" size={24} color="#333333" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Messages */}
