@@ -25,6 +25,7 @@ export const ChatBot = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
+  const [loading, setLoading] = useState(false);
   const drawerAnimation = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
@@ -43,27 +44,79 @@ export const ChatBot = () => {
     setIsDrawerOpen(!isDrawerOpen);
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (inputText.trim()) {
-      const newMessage: Message = {
+      const userMessage: Message = {
         id: Date.now().toString(),
         text: inputText.trim(),
         isBot: false,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, newMessage]);
+      setMessages((prev) => [...prev, userMessage]);
       setInputText("");
+      setLoading(true);
+      try {
+        const history = [
+          {
+            role: "system",
+            content:
+              "Você é um assistente de uma clínica de nutrição. Responda de forma simpática, clara e útil, lembrando o contexto da conversa.",
+          },
+          ...messages.map((msg) => ({
+            role: msg.isBot ? "assistant" : "user",
+            content: msg.text,
+          })),
+          { role: "user", content: userMessage.text },
+        ];
 
-      // Simulate bot response (you'll replace this with actual bot logic)
-      setTimeout(() => {
-        const botResponse: Message = {
+        const response = await fetch(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${process.env.EXPO_PUBLIC_OPENROUTER_API_KEY}`,
+            },
+            body: JSON.stringify({
+              model: "meta-llama/llama-4-maverick:free",
+              messages: history,
+              max_tokens: 1000,
+              temperature: 0.7,
+              top_p: 0.9,
+              frequency_penalty: 0.3,
+              presence_penalty: 0.3,
+              n: 1,
+            }),
+          }
+        );
+
+        if (!response.ok) throw new Error("Erro ao comunicar com o chatbot");
+
+        const data = await response.json();
+        const botText =
+          data.choices?.[0]?.message?.content?.trim() ||
+          "Desculpe, não consegui gerar uma resposta.";
+
+        const botMessage: Message = {
           id: (Date.now() + 1).toString(),
-          text: "Olá! Sou o assistente da clínica. Como posso ajudar?",
+          text: botText,
           isBot: true,
           timestamp: new Date(),
         };
-        setMessages((prev) => [...prev, botResponse]);
-      }, 1000);
+        setMessages((prev) => [...prev, botMessage]);
+      } catch (error) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 2).toString(),
+            text: "Erro ao comunicar com o chatbot.",
+            isBot: true,
+            timestamp: new Date(),
+          },
+        ]);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -137,6 +190,13 @@ export const ChatBot = () => {
               </Text>
             </View>
           ))}
+          {loading && (
+            <View style={{ alignItems: "center", marginVertical: 8 }}>
+              <Text style={{ color: "#ADC178" }}>
+                O assistente está digitando...
+              </Text>
+            </View>
+          )}
         </ScrollView>
 
         {/* Input Area */}
