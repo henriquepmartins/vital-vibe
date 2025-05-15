@@ -137,7 +137,6 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
 
       const today = new Date().toISOString().split("T")[0];
 
-      // Buscar apenas as consultas futuras
       const { data, error } = await supabase
         .from("appointments")
         .select(
@@ -370,10 +369,13 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
                     style={styles.avatarContainer}
                     onPress={() => router.push("/profile")}
                   >
-                    <Image
-                      source={{ uri: "https://via.placeholder.com/150" }}
-                      style={styles.avatar}
-                    />
+                    <View style={styles.avatarContent}>
+                      <Ionicons
+                        name="person"
+                        size={width > 500 ? 26 : 22}
+                        color="white"
+                      />
+                    </View>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -652,12 +654,21 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   avatarContainer: {
-    width: width > 500 ? 46 : 40,
-    height: width > 500 ? 46 : 40,
-    borderRadius: width > 500 ? 23 : 20,
+    width: width > 500 ? 42 : 36,
+    height: width > 500 ? 42 : 36,
+    borderRadius: width > 500 ? 21 : 18,
     overflow: "hidden",
-    borderWidth: 2,
-    borderColor: "white",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 0,
+  },
+  avatarContent: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   avatar: {
     width: "100%",

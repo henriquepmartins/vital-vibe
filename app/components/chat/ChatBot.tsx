@@ -1,0 +1,294 @@
+import React, { useState, useRef } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Animated,
+  Dimensions,
+  StyleSheet,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+interface Message {
+  id: string;
+  text: string;
+  isBot: boolean;
+  timestamp: Date;
+}
+
+export const ChatBot = () => {
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputText, setInputText] = useState("");
+  const drawerAnimation = useRef(new Animated.Value(0)).current;
+  const scrollViewRef = useRef<ScrollView>(null);
+  const insets = useSafeAreaInsets();
+
+  const windowHeight = Dimensions.get("window").height;
+  const drawerHeight = windowHeight * 0.7;
+
+  const toggleDrawer = () => {
+    const toValue = isDrawerOpen ? 0 : 1;
+    Animated.spring(drawerAnimation, {
+      toValue,
+      useNativeDriver: true,
+      tension: 65,
+      friction: 11,
+    }).start();
+    setIsDrawerOpen(!isDrawerOpen);
+  };
+
+  const sendMessage = () => {
+    if (inputText.trim()) {
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        text: inputText.trim(),
+        isBot: false,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, newMessage]);
+      setInputText("");
+
+      // Simulate bot response (you'll replace this with actual bot logic)
+      setTimeout(() => {
+        const botResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          text: "Olá! Sou o assistente da clínica. Como posso ajudar?",
+          isBot: true,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, botResponse]);
+      }, 1000);
+    }
+  };
+
+  const translateY = drawerAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [drawerHeight, 0],
+  });
+
+  return (
+    <>
+      {/* Chat Button */}
+      <TouchableOpacity
+        style={[styles.chatButton, { bottom: insets.bottom + 20 }]}
+        onPress={toggleDrawer}
+      >
+        <Ionicons name="chatbubble-ellipses" size={24} color="white" />
+      </TouchableOpacity>
+
+      {/* Chat Drawer */}
+      <Animated.View
+        style={[
+          styles.drawer,
+          {
+            transform: [{ translateY }],
+            height: drawerHeight,
+          },
+        ]}
+      >
+        {/* Header */}
+        <View style={styles.drawerHeader}>
+          <Text style={styles.drawerTitle}>Chat da Clínica</Text>
+          <TouchableOpacity onPress={toggleDrawer}>
+            <Ionicons name="close" size={24} color="#333333" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Messages */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.messagesContainer}
+          contentContainerStyle={styles.messagesContent}
+          onContentSizeChange={() =>
+            scrollViewRef.current?.scrollToEnd({ animated: true })
+          }
+        >
+          {messages.map((message) => (
+            <View
+              key={message.id}
+              style={[
+                styles.messageBubble,
+                message.isBot ? styles.botMessage : styles.userMessage,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.messageText,
+                  message.isBot
+                    ? styles.botMessageText
+                    : styles.userMessageText,
+                ]}
+              >
+                {message.text}
+              </Text>
+              <Text
+                style={[
+                  styles.timestamp,
+                  message.isBot ? styles.botTimestamp : styles.userTimestamp,
+                ]}
+              >
+                {message.timestamp.toLocaleTimeString().slice(0, 5)}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* Input Area */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+          style={styles.inputContainer}
+        >
+          <TextInput
+            style={styles.input}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Digite sua mensagem..."
+            placeholderTextColor="#666666"
+            multiline
+            maxLength={500}
+          />
+          <TouchableOpacity
+            style={styles.sendButton}
+            onPress={sendMessage}
+            disabled={!inputText.trim()}
+          >
+            <Ionicons
+              name="send"
+              size={24}
+              color={inputText.trim() ? "#ADC178" : "#A0A0A0"}
+            />
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </Animated.View>
+    </>
+  );
+};
+
+const styles = StyleSheet.create({
+  chatButton: {
+    position: "absolute",
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#ADC178",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  drawer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: -3,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  drawerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5E5",
+  },
+  drawerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333333",
+  },
+  messagesContainer: {
+    flex: 1,
+    backgroundColor: "#F8F9FA",
+  },
+  messagesContent: {
+    padding: 16,
+  },
+  messageBubble: {
+    maxWidth: "80%",
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 8,
+  },
+  botMessage: {
+    backgroundColor: "#FFFFFF",
+    alignSelf: "flex-start",
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
+  },
+  userMessage: {
+    backgroundColor: "#ADC178",
+    alignSelf: "flex-end",
+    borderBottomRightRadius: 4,
+  },
+  messageText: {
+    fontSize: 16,
+  },
+  botMessageText: {
+    color: "#333333",
+  },
+  userMessageText: {
+    color: "#FFFFFF",
+  },
+  timestamp: {
+    fontSize: 12,
+    marginTop: 4,
+    alignSelf: "flex-end",
+  },
+  botTimestamp: {
+    color: "#666666",
+  },
+  userTimestamp: {
+    color: "#FFFFFF",
+    opacity: 0.8,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E5E5",
+    backgroundColor: "#FFFFFF",
+    marginBottom: 46,
+  },
+  input: {
+    flex: 1,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    fontSize: 16,
+    maxHeight: 100,
+    color: "#333333",
+  },
+  sendButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: 44,
+    height: 44,
+  },
+});
