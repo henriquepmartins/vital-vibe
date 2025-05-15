@@ -20,6 +20,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { supabase } from "@/lib/supabase";
 import { router } from "expo-router";
 import { useAppointment } from "../contexts/AppointmentContext";
+import { useHydration } from "../contexts/HydrationContext";
 
 const availableSlots = [
   { id: "1", period: "Manhã", time: "11:00" },
@@ -64,16 +65,16 @@ type Appointment = {
 const { width, height } = Dimensions.get("window");
 
 export default function DashboardScreen({ navigation }: DashboardScreenProps) {
-  const [waterProgress, setWaterProgress] = useState(2);
   const [upcomingAppointments, setUpcomingAppointments] = useState<
     Appointment[]
   >([]);
   const [loading, setLoading] = useState(true);
-  const totalWaterGoal = 8;
   const [greeting, setGreeting] = useState("Bom dia");
   const [currentDate, setCurrentDate] = useState("");
   const [userName, setUserName] = useState<string>("");
   const { appointmentCount } = useAppointment();
+  const { waterProgress, totalWaterGoal, waterIntake, handleWaterIntake } =
+    useHydration();
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -283,12 +284,6 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
     );
   };
 
-  const handleWaterIntake = (id: string) => {
-    const newWaterProgress =
-      waterProgress < totalWaterGoal ? waterProgress + 1 : waterProgress;
-    setWaterProgress(newWaterProgress);
-  };
-
   const renderAppointments = () => {
     if (loading) {
       return (
@@ -481,19 +476,19 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
                 </Text>
               </View>
               <View style={styles.waterGlassesContainer}>
-                {waterIntake.map((item, index) => (
+                {waterIntake.map((item) => (
                   <TouchableOpacity
                     key={item.id}
                     style={[
                       styles.waterGlass,
-                      { opacity: index < waterProgress ? 1 : 0.5 },
+                      { opacity: item.completed ? 1 : 0.5 },
                     ]}
                     onPress={() => handleWaterIntake(item.id)}
                   >
                     <Ionicons
                       name="water"
                       size={24}
-                      color={index < waterProgress ? "#ADC178" : "#CCCCCC"}
+                      color={item.completed ? "#ADC178" : "#CCCCCC"}
                     />
                     <Text style={styles.waterGlassTime}>{item.time}</Text>
                   </TouchableOpacity>
