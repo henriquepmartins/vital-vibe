@@ -7,8 +7,10 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  Text,
 } from "react-native";
 import { type DateData } from "react-native-calendars";
+import { Picker } from "@react-native-picker/picker";
 
 import {
   DurationSelector,
@@ -56,6 +58,8 @@ const AppointmentScreen = ({ navigation }: any) => {
   const [notes, setNotes] = useState<string>("");
   const { updateAppointmentInfo } = useChat();
   const { refreshAppointmentCount } = useAppointment();
+  const [nutricionistas, setNutricionistas] = useState<any[]>([]);
+  const [selectedNutri, setSelectedNutri] = useState<string>("");
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -105,6 +109,22 @@ const AppointmentScreen = ({ navigation }: any) => {
     fetchAndSetTimeSlots();
   }, [selectedDate, appointmentDuration]);
 
+  useEffect(() => {
+    // Buscar todos os nutricionistas
+    const fetchNutricionistas = async () => {
+      const { data, error } = await supabase
+        .from("nutricionistas")
+        .select("id, nome");
+      if (!error && data) {
+        setNutricionistas(data);
+        if (data.length > 0 && !selectedNutri) {
+          setSelectedNutri(data[0].id);
+        }
+      }
+    };
+    fetchNutricionistas();
+  }, []);
+
   const handleDateSelect = (day: DateData) => {
     setSelectedDate(day.dateString);
     setSelectedTimeSlot("");
@@ -138,6 +158,10 @@ const AppointmentScreen = ({ navigation }: any) => {
     const userId = session?.user?.id;
     if (!userId) {
       Alert.alert("Erro", "Usuário não autenticado.");
+      return;
+    }
+    if (!selectedNutri) {
+      Alert.alert("Selecione um nutricionista.");
       return;
     }
     const slot = getTimeSlotById(selectedTimeSlot);
@@ -174,6 +198,7 @@ const AppointmentScreen = ({ navigation }: any) => {
       status: "scheduled",
       reminder_type: "push",
       reminder_time: new Date(selectedDate + "T" + startTime).toISOString(),
+      nutricionista_id: selectedNutri,
     };
     console.log("Dados enviados para o Supabase:", appointmentData);
     try {
@@ -217,6 +242,35 @@ const AppointmentScreen = ({ navigation }: any) => {
 
   const renderStep1 = () => (
     <>
+      <Text
+        style={{
+          fontWeight: "bold",
+          fontSize: 16,
+          marginBottom: 8,
+          marginLeft: 4,
+        }}
+      >
+        Nutricionista
+      </Text>
+      <View
+        style={{
+          backgroundColor: "#fff",
+          borderRadius: 8,
+          marginBottom: 16,
+          borderWidth: 1,
+          borderColor: "#DDE5B6",
+        }}
+      >
+        <Picker
+          selectedValue={selectedNutri}
+          onValueChange={(itemValue) => setSelectedNutri(itemValue)}
+          style={{ height: 48 }}
+        >
+          {nutricionistas.map((nutri) => (
+            <Picker.Item key={nutri.id} label={nutri.nome} value={nutri.id} />
+          ))}
+        </Picker>
+      </View>
       <AppointmentCalendar
         selectedDate={selectedDate}
         handleDateSelect={handleDateSelect}

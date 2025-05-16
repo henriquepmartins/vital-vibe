@@ -148,7 +148,24 @@ const DashboardNutricionista = () => {
                     <Ionicons name="leaf" size={24} color="white" />
                     <Text style={styles.logoText}>VitalVibe</Text>
                   </View>
-                  <Text style={styles.headerSubtitle}>Nutricionista</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text style={styles.headerSubtitle}>Nutricionista</Text>
+                    <TouchableOpacity
+                      style={{
+                        marginLeft: 16,
+                        backgroundColor: "rgba(255,255,255,0.18)",
+                        borderRadius: 20,
+                        padding: 6,
+                      }}
+                      onPress={() => router.push("/perfil-nutricionista")}
+                    >
+                      <Ionicons
+                        name="person-circle-outline"
+                        size={28}
+                        color="#fff"
+                      />
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 <View style={styles.headerBottom}>
                   <View style={styles.greetingContainer}>

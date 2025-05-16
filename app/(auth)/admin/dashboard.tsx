@@ -96,8 +96,35 @@ const DashboardAdmin = () => {
       setSaving(false);
       return;
     }
+    // 1. Cria usuário no Auth
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
+      {
+        email: form.email,
+        password: form.senha,
+        options: {
+          data: {
+            name: form.nome,
+            crn: form.crn,
+            telefone: form.telefone,
+          },
+        },
+      }
+    );
+    if (signUpError) {
+      setError("Erro ao criar usuário no Auth: " + signUpError.message);
+      setSaving(false);
+      return;
+    }
+    const userId = signUpData?.user?.id;
+    if (!userId) {
+      setError("Não foi possível obter o user_id do Auth.");
+      setSaving(false);
+      return;
+    }
+    // 2. Insere na tabela nutricionistas
     const { error } = await supabase.from("nutricionistas").insert([
       {
+        user_id: userId,
         nome: form.nome,
         email: form.email,
         telefone: form.telefone,
@@ -106,11 +133,12 @@ const DashboardAdmin = () => {
     ]);
     if (error) {
       setError("Erro ao salvar nutricionista: " + error.message);
-    } else {
-      setForm({ nome: "", email: "", telefone: "", crn: "", senha: "" });
-      fetchNutricionistas();
-      Alert.alert("Sucesso", "Nutricionista cadastrado com sucesso!");
+      setSaving(false);
+      return;
     }
+    setForm({ nome: "", email: "", telefone: "", crn: "", senha: "" });
+    fetchNutricionistas();
+    Alert.alert("Sucesso", "Nutricionista cadastrado com sucesso!");
     setSaving(false);
   };
 
@@ -257,10 +285,10 @@ const DashboardAdmin = () => {
                 keyboardType="numeric"
                 maxLength={5}
               />
-              <Text style={styles.inputLabel}>Senha (opcional)</Text>
+              <Text style={styles.inputLabel}>Senha</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Senha (opcional)"
+                placeholder="Senha*"
                 placeholderTextColor="#A9A9A9"
                 value={form.senha}
                 onChangeText={(v) => handleChange("senha", v)}
