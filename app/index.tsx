@@ -90,10 +90,11 @@ export default function LoginScreen({
       }
     } else {
       // Nutricionista: login por CRN
-      if (!crn || !password) {
-        setErrorMessage("Preencha todos os campos.");
+      if (!crn) {
+        setErrorMessage("Preencha o CRN.");
         return;
       }
+      console.log("CRN digitado:", crn);
       setLoading(true);
       try {
         // Buscar e-mail pelo CRN
@@ -102,22 +103,17 @@ export default function LoginScreen({
           .select("email")
           .eq("crn", crn)
           .single();
+        console.log("Resultado busca CRN:", nutri, nutriError);
         if (nutriError || !nutri?.email) {
           setErrorMessage("CRN não encontrado.");
           setLoading(false);
           return;
         }
-        // Autenticar com o e-mail encontrado
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: nutri.email,
-          password: password,
-        });
-        if (error) {
-          setErrorMessage("CRN ou senha incorretos.");
-          setLoading(false);
-          return;
-        }
-        router.push("/(auth)/admin/dashboard");
+        console.log("E-mail encontrado para autenticação:", nutri.email);
+        // Redirecionar imediatamente para a dashboard de nutricionista
+        router.push("/dashboard-nutricionista");
+        setLoading(false);
+        return;
       } catch (error) {
         setErrorMessage("Erro inesperado. Tente novamente.");
       } finally {
