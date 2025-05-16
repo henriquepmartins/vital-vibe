@@ -33,6 +33,24 @@ interface Paciente {
   users: { name: string; email: string };
 }
 
+// Função utilitária para capitalizar a primeira letra
+function capitalizeFirstLetter(str: string) {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// Função para traduzir status para português
+function traduzirStatus(status: string) {
+  const map: Record<string, string> = {
+    scheduled: "Agendada",
+    completed: "Concluída",
+    cancelled: "Cancelada",
+    pending: "Pendente",
+    // Adicione outros status conforme necessário
+  };
+  return capitalizeFirstLetter(map[status] || status);
+}
+
 const DashboardNutricionista = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -42,6 +60,7 @@ const DashboardNutricionista = () => {
   const [greeting, setGreeting] = useState("Bom dia");
   const [currentDate, setCurrentDate] = useState("");
   const [userName, setUserName] = useState<string>("");
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -107,8 +126,12 @@ const DashboardNutricionista = () => {
         if (consultasError) {
           console.error("[DEBUG] fetchData - consultasError:", consultasError);
         }
-        console.log("[DEBUG] fetchData - consultasData:", consultasData);
-        setConsultas(Array.isArray(consultasData) ? consultasData : []);
+        const consultasArr = Array.isArray(consultasData) ? consultasData : [];
+        setConsultas(consultasArr);
+        // Buscar nomes dos pacientes das consultas
+        const userIdsConsultas = [
+          ...new Set(consultasArr.map((c) => c.user_id)),
+        ];
         // Pacientes atendidos (únicos)
         const { data: pacientesData, error: pacientesError } = await supabase
           .from("appointments")
@@ -117,8 +140,6 @@ const DashboardNutricionista = () => {
         if (pacientesError) {
           console.error("[DEBUG] fetchData - pacientesError:", pacientesError);
         }
-        console.log("[DEBUG] fetchData - pacientesData:", pacientesData);
-        // Remover duplicados por user_id
         const uniquePacientes: Paciente[] = [];
         const seen = new Set();
         ((pacientesData as any[]) || []).forEach((item) => {
@@ -131,6 +152,28 @@ const DashboardNutricionista = () => {
           }
         });
         setPacientes(uniquePacientes);
+        // Buscar nomes dos pacientes atendidos
+        const userIdsPacientes = uniquePacientes.map((p) => p.user_id);
+        const allUserIds = Array.from(
+          new Set([...userIdsConsultas, ...userIdsPacientes])
+        );
+        let userMap: Record<string, string> = {};
+        if (allUserIds.length > 0) {
+          const { data: usersData, error: usersError } = await supabase
+            .from("users")
+            .select("id, name")
+            .in("id", allUserIds);
+          if (usersError) {
+            console.error("[DEBUG] fetchData - usersError:", usersError);
+          }
+          if (Array.isArray(usersData)) {
+            userMap = usersData.reduce((acc, user) => {
+              acc[user.id] = user.name;
+              return acc;
+            }, {} as Record<string, string>);
+          }
+        }
+        setUserNames(userMap);
       } catch (err) {
         console.error("[DEBUG] fetchData - erro inesperado:", err);
       } finally {
@@ -242,13 +285,13 @@ const DashboardNutricionista = () => {
                     <View style={styles.appointmentCard}>
                       <View style={styles.appointmentInfo}>
                         <Text style={styles.appointmentName}>
-                          Paciente: {item.user_id}
+                          Paciente:{" "}
+                          {capitalizeFirstLetter(
+                            userNames[item.user_id] || "Paciente desconhecido"
+                          )}
                         </Text>
                         <Text style={styles.appointmentDescription}>
-                          {item.appointment_type}
-                        </Text>
-                        <Text style={styles.appointmentDescription}>
-                          {formatDate(item.date)} -{" "}
+                          {capitalizeFirstLetter(formatDate(item.date))} -{" "}
                           {item.start_time?.substring(0, 5)}
                         </Text>
                       </View>
@@ -283,48 +326,64 @@ const DashboardNutricionista = () => {
                 <FlatList
                   data={pacientes}
                   keyExtractor={(item) => item.user_id}
-                  renderItem={({ item }) => (
-                    <View style={styles.appointmentCard}>
-                      <View style={styles.appointmentInfo}>
-                        <Text style={styles.appointmentName}>
-                          Paciente: {item.user_id}
-                        </Text>
-                        <Text style={styles.appointmentDescription}>
-                          {/* Email não disponível sem join */}
-                        </Text>
+                  renderItem={({ item }) => {
+                    // Buscar a última consulta desse paciente
+                    const consultasPaciente = consultas.filter(
+                      (c) => c.user_id === item.user_id
+                    );
+                    const ultimaConsulta =
+                      consultasPaciente.length > 0
+                        ? consultasPaciente[consultasPaciente.length - 1]
+                        : null;
+                    return (
+                      <View style={styles.appointmentCard}>
+                        <View style={styles.appointmentInfo}>
+                          <Text style={styles.appointmentName}>
+                            Paciente:{" "}
+                            {capitalizeFirstLetter(
+                              userNames[item.user_id] || "Paciente desconhecido"
+                            )}
+                          </Text>
+                          {ultimaConsulta && (
+                            <>
+                              <Text style={styles.appointmentDescription}>
+                                Última consulta:{" "}
+                                {capitalizeFirstLetter(
+                                  formatDate(ultimaConsulta.date)
+                                )}{" "}
+                                - {ultimaConsulta.start_time?.substring(0, 5)}
+                              </Text>
+                              <Text style={styles.appointmentDescription}>
+                                Tipo:{" "}
+                                {capitalizeFirstLetter(
+                                  ultimaConsulta.appointment_type
+                                )}{" "}
+                                | Status:{" "}
+                                {traduzirStatus(ultimaConsulta.status)}
+                              </Text>
+                            </>
+                          )}
+                        </View>
+                        <View style={styles.appointmentActions}>
+                          <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={() =>
+                              router.push(
+                                `/plano-alimentar?paciente=${item.user_id}`
+                              )
+                            }
+                          >
+                            <Ionicons
+                              name="restaurant-outline"
+                              size={20}
+                              color="#ADC178"
+                            />
+                            <Text style={styles.actionButtonText}>Plano</Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
-                      <View style={styles.appointmentActions}>
-                        <TouchableOpacity
-                          style={styles.actionButton}
-                          onPress={() =>
-                            router.push(`/chat?paciente=${item.users?.email}`)
-                          }
-                        >
-                          <Ionicons
-                            name="chatbubbles-outline"
-                            size={20}
-                            color="#ADC178"
-                          />
-                          <Text style={styles.actionButtonText}>Chat</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.actionButton}
-                          onPress={() =>
-                            router.push(
-                              `/plano-alimentar?paciente=${item.users?.email}`
-                            )
-                          }
-                        >
-                          <Ionicons
-                            name="restaurant-outline"
-                            size={20}
-                            color="#ADC178"
-                          />
-                          <Text style={styles.actionButtonText}>Plano</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  )}
+                    );
+                  }}
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   style={{ marginVertical: 10 }}

@@ -49,19 +49,16 @@ const NutritionistSelector = ({
 
   const selected = nutricionistas.find((n) => n.id === selectedNutri);
 
-  // Filtra por nome
   const filtered = nutricionistas.filter((n) =>
     n.nome.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Foca no input ao abrir modal
   useEffect(() => {
     if (modalVisible && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 200);
     }
   }, [modalVisible]);
 
-  // Fecha ao clicar fora
   const handleBackdropPress = () => {
     setModalVisible(false);
     setSearch("");
