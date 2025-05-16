@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 const AdminLoginScreen = () => {
   const [email, setEmail] = useState("");
@@ -44,6 +45,9 @@ const AdminLoginScreen = () => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="arrow-back" size={24} color="#6C584C" />
+      </TouchableOpacity>
       <Text style={styles.title}>Login Admin</Text>
       <TextInput
         style={styles.input}
@@ -119,6 +123,15 @@ const styles = StyleSheet.create({
     color: "red",
     marginBottom: 8,
     fontSize: 14,
+  },
+  backButton: {
+    position: "absolute",
+    top: 40,
+    left: 24,
+    zIndex: 10,
+    padding: 4,
+    backgroundColor: "#F0EAD2",
+    borderRadius: 20,
   },
 });
 
