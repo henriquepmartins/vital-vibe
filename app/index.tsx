@@ -15,7 +15,7 @@ if (typeof global.process === "undefined") {
 }
 // ───────────────────────────────────────────────────────────────────────────────
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -49,38 +49,80 @@ export default function LoginScreen({
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [loginType, setLoginType] = useState<"paciente" | "nutricionista">(
+    "paciente"
+  );
+  const [crn, setCrn] = useState("");
   const router = useRouter();
 
   const handleLogin = async () => {
     setErrorMessage("");
-    if (!email || !password) {
-      setErrorMessage("Preencha todos os campos.");
-      return;
-    }
-
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      setErrorMessage("Digite um email válido.");
-      return;
-    }
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
-      if (error) {
-        if (error.message.toLowerCase().includes("invalid login credentials")) {
-          setErrorMessage("Email ou senha incorretos.");
-        } else {
-          setErrorMessage(error.message);
-        }
+    if (loginType === "paciente") {
+      if (!email || !password) {
+        setErrorMessage("Preencha todos os campos.");
         return;
       }
-      router.push("/dashboard");
-    } catch (error) {
-      setErrorMessage("Erro inesperado. Tente novamente.");
-    } finally {
-      setLoading(false);
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        setErrorMessage("Digite um email válido.");
+        return;
+      }
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password,
+        });
+        if (error) {
+          if (
+            error.message.toLowerCase().includes("invalid login credentials")
+          ) {
+            setErrorMessage("Email ou senha incorretos.");
+          } else {
+            setErrorMessage(error.message);
+          }
+          return;
+        }
+        router.push("/dashboard");
+      } catch (error) {
+        setErrorMessage("Erro inesperado. Tente novamente.");
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Nutricionista: login por CRN
+      if (!crn || !password) {
+        setErrorMessage("Preencha todos os campos.");
+        return;
+      }
+      setLoading(true);
+      try {
+        // Buscar e-mail pelo CRN
+        const { data: nutri, error: nutriError } = await supabase
+          .from("nutricionistas")
+          .select("email")
+          .eq("crn", crn)
+          .single();
+        if (nutriError || !nutri?.email) {
+          setErrorMessage("CRN não encontrado.");
+          setLoading(false);
+          return;
+        }
+        // Autenticar com o e-mail encontrado
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: nutri.email,
+          password: password,
+        });
+        if (error) {
+          setErrorMessage("CRN ou senha incorretos.");
+          setLoading(false);
+          return;
+        }
+        router.push("/(auth)/admin/dashboard");
+      } catch (error) {
+        setErrorMessage("Erro inesperado. Tente novamente.");
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -107,21 +149,85 @@ export default function LoginScreen({
                 <Text style={styles.subtitle}>
                   Acesse a plataforma Vital Vibe!
                 </Text>
+                {/* Toggle de tipo de login */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    marginBottom: 18,
+                    marginTop: 10,
+                  }}
+                >
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor:
+                        loginType === "paciente" ? "#ADC178" : "#F0EAD2",
+                      paddingVertical: 8,
+                      paddingHorizontal: 18,
+                      borderRadius: 16,
+                      marginRight: 8,
+                    }}
+                    onPress={() => setLoginType("paciente")}
+                  >
+                    <Text
+                      style={{
+                        color: loginType === "paciente" ? "#fff" : "#6C584C",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Paciente
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor:
+                        loginType === "nutricionista" ? "#ADC178" : "#F0EAD2",
+                      paddingVertical: 8,
+                      paddingHorizontal: 18,
+                      borderRadius: 16,
+                    }}
+                    onPress={() => setLoginType("nutricionista")}
+                  >
+                    <Text
+                      style={{
+                        color:
+                          loginType === "nutricionista" ? "#fff" : "#6C584C",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Nutricionista
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 {errorMessage ? (
                   <Text style={styles.errorMessage}>{errorMessage}</Text>
                 ) : null}
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Email</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="seu@email.com"
-                    placeholderTextColor="#A98467"
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-                </View>
+                {loginType === "paciente" ? (
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>Email</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="seu@email.com"
+                      placeholderTextColor="#A98467"
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                  </View>
+                ) : (
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>CRN</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="CRN do nutricionista"
+                      placeholderTextColor="#A98467"
+                      value={crn}
+                      onChangeText={setCrn}
+                      autoCapitalize="characters"
+                    />
+                  </View>
+                )}
                 <View style={styles.inputContainer}>
                   <Text style={styles.inputLabel}>Senha</Text>
                   <View style={styles.passwordContainer}>
