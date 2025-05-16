@@ -1,15 +1,28 @@
 import { Stack } from "expo-router";
+import { UserProvider } from "./contexts/UserContext";
+import { ChatProvider } from "./contexts/ChatContext";
+import { AppointmentProvider } from "./contexts/AppointmentContext";
+import { HydrationProvider } from "./contexts/HydrationContext";
+import { ChatBot } from "./components/chat/ChatBot";
 
-export default function MainLayout() {
+export default function AppLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="(auth)/sign-up/register"
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen name="(app)" options={{ headerShown: false }} />
-      <Stack.Screen name="profile" options={{ headerShown: false }} />
-    </Stack>
+    <UserProvider>
+      <ChatProvider>
+        <AppointmentProvider>
+          <HydrationProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+              <Stack.Screen name="consulta" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="ConsultaAgendada"
+                options={{ headerShown: false }}
+              />
+            </Stack>
+            <ChatBot />
+          </HydrationProvider>
+        </AppointmentProvider>
+      </ChatProvider>
+    </UserProvider>
   );
 }

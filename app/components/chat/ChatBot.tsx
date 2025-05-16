@@ -15,6 +15,9 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useChat } from "../../contexts/ChatContext";
+import { useUser } from "../../contexts/UserContext";
+import { useHydration } from "../../contexts/HydrationContext";
+import { useAppointment } from "../../contexts/AppointmentContext";
 
 interface Message {
   id: string;
@@ -32,6 +35,9 @@ export const ChatBot = () => {
   const scrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const { appointmentInfo } = useChat();
+  const { user } = useUser();
+  const { waterProgress, totalWaterGoal } = useHydration();
+  const { appointmentCount } = useAppointment();
 
   const windowHeight = Dimensions.get("window").height;
   const drawerHeight = windowHeight * 0.7;
@@ -80,6 +86,29 @@ export const ChatBot = () => {
     let prompt =
       "Você é um assistente de uma clínica de nutrição. Responda de forma simpática, clara e útil, lembrando o contexto da conversa.";
 
+    // Dados do usuário
+    if (user) {
+      prompt += `\nInformações do usuário:\n`;
+      prompt += `- Nome: ${user.name || "-"}\n`;
+      if (user.birthdate) {
+        const birthYear = Number(user.birthdate.split("-")[0]);
+        const age = !isNaN(birthYear)
+          ? new Date().getFullYear() - birthYear
+          : "-";
+        prompt += `- Idade: ${age}\n`;
+      }
+      if (user.weight) prompt += `- Peso: ${user.weight} kg\n`;
+      if (user.height) prompt += `- Altura: ${user.height} cm\n`;
+      if (user.phone) prompt += `- Telefone: ${user.phone}\n`;
+    }
+
+    // Dados de hidratação
+    prompt += `- Copos de água bebidos hoje: ${waterProgress} de ${totalWaterGoal}\n`;
+
+    // Total de consultas agendadas
+    prompt += `- Consultas agendadas: ${appointmentCount}\n`;
+
+    // Dados de agendamento
     if (appointmentInfo.patientName) {
       prompt += `\nInformações do agendamento atual:\n`;
       prompt += `- Paciente: ${appointmentInfo.patientName}\n`;

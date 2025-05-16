@@ -22,6 +22,8 @@ export const AppointmentProvider: React.FC<{ children: React.ReactNode }> = ({
       } = await supabase.auth.getSession();
       const userId = session?.user?.id;
 
+      console.log("[AppointmentContext] userId:", userId);
+
       if (!userId) {
         console.error("Usuário não autenticado");
         setAppointmentCount(0);
@@ -29,13 +31,17 @@ export const AppointmentProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const today = new Date().toISOString().split("T")[0];
+      console.log("[AppointmentContext] today:", today);
 
       const { data, error } = await supabase
         .from("appointments")
-        .select("id")
+        .select("id, user_id, date")
         .eq("user_id", userId)
         .gte("date", today)
         .order("date", { ascending: true });
+
+      console.log("[AppointmentContext] data:", data);
+      console.log("[AppointmentContext] error:", error);
 
       if (error) {
         console.error("Erro ao buscar consultas:", error);
