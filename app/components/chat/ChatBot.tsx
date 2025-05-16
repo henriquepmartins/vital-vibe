@@ -18,6 +18,7 @@ import { useChat } from "../../contexts/ChatContext";
 import { useUser } from "../../contexts/UserContext";
 import { useHydration } from "../../contexts/HydrationContext";
 import { useAppointment } from "../../contexts/AppointmentContext";
+import Markdown from "react-native-markdown-display";
 
 interface Message {
   id: string;
@@ -262,16 +263,23 @@ export const ChatBot = () => {
                 message.isBot ? styles.botMessage : styles.userMessage,
               ]}
             >
-              <Text
-                style={[
-                  styles.messageText,
-                  message.isBot
-                    ? styles.botMessageText
-                    : styles.userMessageText,
-                ]}
-              >
-                {message.text}
-              </Text>
+              {message.isBot ? (
+                <Markdown
+                  style={{
+                    body: [styles.messageText, styles.botMessageText],
+                    strong: { fontWeight: "bold" },
+                    em: { fontStyle: "italic" },
+                    heading1: { fontSize: 22, fontWeight: "bold" },
+                    heading2: { fontSize: 18, fontWeight: "bold" },
+                  }}
+                >
+                  {message.text}
+                </Markdown>
+              ) : (
+                <Text style={[styles.messageText, styles.userMessageText]}>
+                  {message.text}
+                </Text>
+              )}
               <Text
                 style={[
                   styles.timestamp,
