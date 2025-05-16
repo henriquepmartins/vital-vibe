@@ -3,7 +3,6 @@ import { UserProvider } from "./contexts/UserContext";
 import { ChatProvider } from "./contexts/ChatContext";
 import { AppointmentProvider } from "./contexts/AppointmentContext";
 import { HydrationProvider } from "./contexts/HydrationContext";
-import { ChatBot } from "./components/chat/ChatBot";
 
 export default function AppLayout() {
   return (
@@ -19,7 +18,6 @@ export default function AppLayout() {
                 options={{ headerShown: false }}
               />
             </Stack>
-            <ChatBot />
           </HydrationProvider>
         </AppointmentProvider>
       </ChatProvider>

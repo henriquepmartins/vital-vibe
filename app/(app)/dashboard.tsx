@@ -7,7 +7,6 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   FlatList,
   Image,
   Dimensions,
@@ -21,6 +20,7 @@ import { supabase } from "@/lib/supabase";
 import { router } from "expo-router";
 import { useAppointment } from "../contexts/AppointmentContext";
 import { useHydration } from "../contexts/HydrationContext";
+import { ChatBot } from "../components/chat/ChatBot";
 
 const availableSlots = [
   { id: "1", period: "Manhã", time: "11:00" },
@@ -318,252 +318,266 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.phoneContainer}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.headerContainer}>
-            <LinearGradient
-              colors={["#ADC178", "#ADC178"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.headerGradient}
-            >
-              <View style={styles.headerTop}>
-                <View style={styles.headerLeft}>
-                  <View style={styles.logoContainer}>
-                    <Ionicons name="leaf" size={24} color="white" />
-                    <Text style={styles.logoText}>VitalVibe</Text>
-                  </View>
-                  <Text style={styles.headerSubtitle}>UNDB</Text>
-                </View>
-
-                <View style={styles.headerRight}>
-                  <TouchableOpacity
-                    style={styles.iconButton}
-                    onPress={() => {}}
-                  >
-                    <Ionicons name="search-outline" size={22} color="white" />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.notificationButton}
-                    onPress={() => {}}
-                  >
-                    <Ionicons
-                      name="notifications-outline"
-                      size={22}
-                      color="white"
-                    />
-                    <View style={styles.notificationBadge}>
-                      <Text style={styles.notificationBadgeText}>2</Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.avatarContainer}
-                    onPress={() => router.push("/profile")}
-                  >
-                    <View style={styles.avatarContent}>
-                      <Ionicons
-                        name="person"
-                        size={width > 500 ? 26 : 22}
-                        color="white"
-                      />
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.headerBottom}>
-                <View style={styles.greetingContainer}>
-                  <Text style={styles.greeting}>{greeting},</Text>
-                  <Text style={styles.userName}>{userName}!</Text>
-                  <Text style={styles.currentDate}>{currentDate}</Text>
-                </View>
-
-                <View style={styles.statsContainer}>
-                  <View style={styles.statItem}>
-                    <View style={styles.statIconContainer}>
-                      <Ionicons
-                        name="calendar-outline"
-                        size={18}
-                        color="white"
-                      />
-                    </View>
-                    <View>
-                      <Text style={styles.statValue}>{appointmentCount}</Text>
-                      <Text style={styles.statLabel}>Consultas</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.statItem}>
-                    <View style={styles.statIconContainer}>
-                      <Ionicons name="water-outline" size={18} color="white" />
-                    </View>
-                    <View>
-                      <Text style={styles.statValue}>
-                        {waterProgress}/{totalWaterGoal}
-                      </Text>
-                      <Text style={styles.statLabel}>Hidratação</Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.headerCurve} />
-            </LinearGradient>
-          </View>
-
-          <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={() => router.push("/consulta")}
-            >
-              <Ionicons
-                name="calendar-outline"
-                size={20}
-                color="white"
-                style={styles.buttonIcon}
-              />
-              <Text style={styles.primaryButtonText}>Agendar Consulta</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={() => router.push("/profile")}
-            >
-              <Ionicons
-                name="person-outline"
-                size={20}
-                color="#ADC178"
-                style={styles.buttonIcon}
-              />
-              <Text style={styles.secondaryButtonText}>Meu Perfil</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Minhas Consultas</Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate("Agendamento")}
+    <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+      <View style={styles.container}>
+        <View style={styles.phoneContainer}>
+          <ScrollView
+            contentContainerStyle={[
+              styles.scrollContainer,
+              { minHeight: height },
+            ]}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.headerContainer}>
+              <LinearGradient
+                colors={["#ADC178", "#ADC178"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.headerGradient}
               >
-                <Text style={styles.seeAllText}>Ver todas</Text>
+                <View style={styles.headerTop}>
+                  <View style={styles.headerLeft}>
+                    <View style={styles.logoContainer}>
+                      <Ionicons name="leaf" size={24} color="white" />
+                      <Text style={styles.logoText}>VitalVibe</Text>
+                    </View>
+                    <Text style={styles.headerSubtitle}>UNDB</Text>
+                  </View>
+
+                  <View style={styles.headerRight}>
+                    <TouchableOpacity
+                      style={styles.iconButton}
+                      onPress={() => {}}
+                    >
+                      <Ionicons name="search-outline" size={22} color="white" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.notificationButton}
+                      onPress={() => {}}
+                    >
+                      <Ionicons
+                        name="notifications-outline"
+                        size={22}
+                        color="white"
+                      />
+                      <View style={styles.notificationBadge}>
+                        <Text style={styles.notificationBadgeText}>2</Text>
+                      </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.avatarContainer}
+                      onPress={() => router.push("/profile")}
+                    >
+                      <View style={styles.avatarContent}>
+                        <Ionicons
+                          name="person"
+                          size={width > 500 ? 26 : 22}
+                          color="white"
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.headerBottom}>
+                  <View style={styles.greetingContainer}>
+                    <Text style={styles.greeting}>{greeting},</Text>
+                    <Text style={styles.userName}>{userName}!</Text>
+                    <Text style={styles.currentDate}>{currentDate}</Text>
+                  </View>
+
+                  <View style={styles.statsContainer}>
+                    <View style={styles.statItem}>
+                      <View style={styles.statIconContainer}>
+                        <Ionicons
+                          name="calendar-outline"
+                          size={18}
+                          color="white"
+                        />
+                      </View>
+                      <View>
+                        <Text style={styles.statValue}>{appointmentCount}</Text>
+                        <Text style={styles.statLabel}>Consultas</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.statItem}>
+                      <View style={styles.statIconContainer}>
+                        <Ionicons
+                          name="water-outline"
+                          size={18}
+                          color="white"
+                        />
+                      </View>
+                      <View>
+                        <Text style={styles.statValue}>
+                          {waterProgress}/{totalWaterGoal}
+                        </Text>
+                        <Text style={styles.statLabel}>Hidratação</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.headerCurve} />
+              </LinearGradient>
+            </View>
+
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => router.push("/consulta")}
+              >
+                <Ionicons
+                  name="calendar-outline"
+                  size={20}
+                  color="white"
+                  style={styles.buttonIcon}
+                />
+                <Text style={styles.primaryButtonText}>Agendar Consulta</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => router.push("/profile")}
+              >
+                <Ionicons
+                  name="person-outline"
+                  size={20}
+                  color="#ADC178"
+                  style={styles.buttonIcon}
+                />
+                <Text style={styles.secondaryButtonText}>Meu Perfil</Text>
               </TouchableOpacity>
             </View>
-            {renderAppointments()}
-          </View>
 
-          <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Controle de Hidratação</Text>
+            <View style={styles.sectionContainer}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Minhas Consultas</Text>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("Agendamento")}
+                >
+                  <Text style={styles.seeAllText}>Ver todas</Text>
+                </TouchableOpacity>
+              </View>
+              {renderAppointments()}
             </View>
-            <View style={styles.waterTrackerCard}>
-              <View style={styles.waterProgressContainer}>
-                <View style={styles.waterProgressBar}>
-                  <LinearGradient
-                    colors={["#ADC178", "#4CAF50"]}
-                    style={[
-                      styles.waterProgressFill,
-                      { width: `${(waterProgress / totalWaterGoal) * 100}%` },
-                    ]}
+
+            <View style={styles.sectionContainer}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Controle de Hidratação</Text>
+              </View>
+              <View style={styles.waterTrackerCard}>
+                <View style={styles.waterProgressContainer}>
+                  <View style={styles.waterProgressBar}>
+                    <LinearGradient
+                      colors={["#ADC178", "#4CAF50"]}
+                      style={[
+                        styles.waterProgressFill,
+                        { width: `${(waterProgress / totalWaterGoal) * 100}%` },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.waterProgressText}>
+                    {waterProgress} de {totalWaterGoal} copos
+                  </Text>
+                </View>
+                <View style={styles.waterGlassesContainer}>
+                  {waterIntake.map((item) => (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[
+                        styles.waterGlass,
+                        { opacity: item.completed ? 1 : 0.5 },
+                      ]}
+                      onPress={() => handleWaterIntake(item.id)}
+                    >
+                      <Ionicons
+                        name="water"
+                        size={24}
+                        color={item.completed ? "#ADC178" : "#CCCCCC"}
+                      />
+                      <Text style={styles.waterGlassTime}>{item.time}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.sectionContainer}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Plano Alimentar de Hoje</Text>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("Agendamento")}
+                >
+                  <Text style={styles.seeAllText}>Ver completo</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                style={styles.mealPlanCard}
+                onPress={() => navigation.navigate("Agendamento")}
+              >
+                <View style={styles.mealPlanContent}>
+                  <View style={styles.mealPlanInfo}>
+                    <Text style={styles.mealPlanTitle}>Café da Manhã</Text>
+                    <Text style={styles.mealPlanDescription}>
+                      1 fatia de pão integral{"\n"}1 ovo mexido{"\n"}1 xícara de
+                      chá verde
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name="restaurant-outline"
+                    size={40}
+                    color="#ADC178"
                   />
                 </View>
-                <Text style={styles.waterProgressText}>
-                  {waterProgress} de {totalWaterGoal} copos
-                </Text>
-              </View>
-              <View style={styles.waterGlassesContainer}>
-                {waterIntake.map((item) => (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={[
-                      styles.waterGlass,
-                      { opacity: item.completed ? 1 : 0.5 },
-                    ]}
-                    onPress={() => handleWaterIntake(item.id)}
-                  >
-                    <Ionicons
-                      name="water"
-                      size={24}
-                      color={item.completed ? "#ADC178" : "#CCCCCC"}
-                    />
-                    <Text style={styles.waterGlassTime}>{item.time}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.sectionContainer}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Plano Alimentar de Hoje</Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate("Agendamento")}
-              >
-                <Text style={styles.seeAllText}>Ver completo</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={styles.mealPlanCard}
-              onPress={() => navigation.navigate("Agendamento")}
-            >
-              <View style={styles.mealPlanContent}>
-                <View style={styles.mealPlanInfo}>
-                  <Text style={styles.mealPlanTitle}>Café da Manhã</Text>
-                  <Text style={styles.mealPlanDescription}>
-                    1 fatia de pão integral{"\n"}1 ovo mexido{"\n"}1 xícara de
-                    chá verde
-                  </Text>
-                </View>
-                <Ionicons name="restaurant-outline" size={40} color="#ADC178" />
-              </View>
-            </TouchableOpacity>
-          </View>
 
-          <View style={styles.chatSectionContainer}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Dúvidas Rápidas?</Text>
+            <View style={styles.chatSectionContainer}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Dúvidas Rápidas?</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.chatCard}
+                onPress={() => navigation.navigate("Chat")}
+              >
+                <View style={styles.chatCardContent}>
+                  <Ionicons
+                    name="chatbubbles-outline"
+                    size={40}
+                    color="#ADC178"
+                  />
+                  <View style={styles.chatCardInfo}>
+                    <Text style={styles.chatCardTitle}>
+                      Fale com sua nutricionista
+                    </Text>
+                    <Text style={styles.chatCardDescription}>
+                      Tire suas dúvidas sobre alimentação, porções e seu plano
+                      alimentar.
+                    </Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={24} color="#ADC178" />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={styles.chatCard}
-              onPress={() => navigation.navigate("Chat")}
-            >
-              <View style={styles.chatCardContent}>
-                <Ionicons
-                  name="chatbubbles-outline"
-                  size={40}
-                  color="#ADC178"
-                />
-                <View style={styles.chatCardInfo}>
-                  <Text style={styles.chatCardTitle}>
-                    Fale com sua nutricionista
-                  </Text>
-                  <Text style={styles.chatCardDescription}>
-                    Tire suas dúvidas sobre alimentação, porções e seu plano
-                    alimentar.
-                  </Text>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={24} color="#ADC178" />
-            </TouchableOpacity>
-          </View>
 
-          <View style={styles.footer} />
-        </ScrollView>
+            <View style={styles.footer} />
+          </ScrollView>
+        </View>
       </View>
+      <ChatBot />
     </View>
   );
 }
 
-const STATUSBAR_HEIGHT =
-  Platform.OS === "ios" ? 20 : StatusBar.currentHeight || 20;
+const STATUSBAR_HEIGHT = StatusBar.currentHeight || 44;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#FFFFFF",
   },
   phoneContainer: {
     flex: 1,
@@ -578,10 +592,11 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   headerGradient: {
-    paddingTop: Platform.OS === "ios" ? 50 : STATUSBAR_HEIGHT + 10,
+    paddingTop: STATUSBAR_HEIGHT + 10,
     paddingBottom: 40,
     paddingHorizontal: 20,
     position: "relative",
+    minHeight: STATUSBAR_HEIGHT + 120,
   },
   headerTop: {
     flexDirection: "row",
@@ -1018,7 +1033,7 @@ const styles = StyleSheet.create({
     lineHeight: width > 500 ? 22 : 20,
   },
   footer: {
-    height: width > 500 ? 25 : 20,
+    height: width > 500 ? 40 : 30,
   },
   loadingContainer: {
     padding: 20,

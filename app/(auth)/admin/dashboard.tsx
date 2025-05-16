@@ -10,9 +10,11 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 type Nutricionista = {
   id: string;
@@ -24,6 +26,7 @@ type Nutricionista = {
 };
 
 const DashboardAdmin = () => {
+  const router = useRouter();
   const [nutricionistas, setNutricionistas] = useState<Nutricionista[]>([]);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
@@ -65,6 +68,25 @@ const DashboardAdmin = () => {
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
+
+  // Função para formatar telefone
+  function formatPhoneInput(text: string) {
+    let cleaned = text.replace(/\D/g, "");
+    if (cleaned.length > 11) cleaned = cleaned.slice(0, 11);
+    if (cleaned.length <= 2) return cleaned;
+    if (cleaned.length <= 7)
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+    if (cleaned.length <= 11)
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(
+        7
+      )}`;
+    return text;
+  }
+
+  // Função para limitar CRN a 5 dígitos
+  function formatCRNInput(text: string) {
+    return text.replace(/\D/g, "").slice(0, 5);
+  }
 
   const handleSave = async () => {
     setSaving(true);
@@ -163,177 +185,247 @@ const DashboardAdmin = () => {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
     >
-      <View style={{ flex: 1, padding: 24 }}>
-        <Text style={styles.title}>Dashboard Admin</Text>
-        <Text style={styles.subtitle}>Cadastro de Nutricionistas</Text>
-        <View style={styles.formCard}>
-          <Text style={styles.formTitle}>Novo Nutricionista</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Nome*"
-            value={form.nome}
-            onChangeText={(v) => handleChange("nome", v)}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="E-mail*"
-            value={form.email}
-            onChangeText={(v) => handleChange("email", v)}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Telefone"
-            value={form.telefone}
-            onChangeText={(v) => handleChange("telefone", v)}
-            keyboardType="phone-pad"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="CRN*"
-            value={form.crn}
-            onChangeText={(v) => handleChange("crn", v)}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Senha (opcional)"
-            value={form.senha}
-            onChangeText={(v) => handleChange("senha", v)}
-            secureTextEntry
-          />
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={handleSave}
-            disabled={saving}
-          >
-            {saving ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.saveButtonText}>Salvar</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.listTitle}>Nutricionistas Cadastrados</Text>
-        {loading ? (
-          <ActivityIndicator
-            size="large"
-            color="#A98467"
-            style={{ marginTop: 24 }}
-          />
-        ) : (
-          <FlatList
-            data={nutricionistas}
-            keyExtractor={(item) => item.id}
-            style={{ marginTop: 12 }}
-            renderItem={({ item }) => (
-              <View style={styles.nutriCard}>
-                {editingId === item.id ? (
-                  <>
-                    <TextInput
-                      style={styles.input}
-                      value={editForm.nome}
-                      onChangeText={(v) => handleEditChange("nome", v)}
-                      placeholder="Nome*"
-                    />
-                    <TextInput
-                      style={styles.input}
-                      value={editForm.email}
-                      onChangeText={(v) => handleEditChange("email", v)}
-                      placeholder="E-mail*"
-                      autoCapitalize="none"
-                    />
-                    <TextInput
-                      style={styles.input}
-                      value={editForm.telefone}
-                      onChangeText={(v) => handleEditChange("telefone", v)}
-                      placeholder="Telefone"
-                    />
-                    <TextInput
-                      style={styles.input}
-                      value={editForm.crn}
-                      onChangeText={(v) => handleEditChange("crn", v)}
-                      placeholder="CRN*"
-                    />
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "flex-end",
-                        marginTop: 8,
-                      }}
-                    >
-                      <TouchableOpacity
-                        style={[
-                          styles.saveButton,
-                          { marginRight: 8, backgroundColor: "#ADC178" },
-                        ]}
-                        onPress={handleUpdate}
-                      >
-                        <Text style={styles.saveButtonText}>Salvar</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[
-                          styles.saveButton,
-                          { backgroundColor: "#E1E1E1" },
-                        ]}
-                        onPress={cancelEdit}
-                      >
-                        <Text
-                          style={[styles.saveButtonText, { color: "#6C584C" }]}
-                        >
-                          Cancelar
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                ) : (
-                  <>
-                    <Text style={styles.nutriName}>{item.nome}</Text>
-                    <Text style={styles.nutriInfo}>Email: {item.email}</Text>
-                    <Text style={styles.nutriInfo}>
-                      Telefone: {item.telefone || "-"}
-                    </Text>
-                    <Text style={styles.nutriInfo}>CRN: {item.crn}</Text>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "flex-end",
-                        marginTop: 8,
-                      }}
-                    >
-                      <TouchableOpacity
-                        onPress={() => startEdit(item)}
-                        style={{ marginRight: 12 }}
-                      >
-                        <Ionicons
-                          name="create-outline"
-                          size={22}
-                          color="#A98467"
-                        />
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => handleDelete(item.id)}>
-                        <Ionicons
-                          name="trash-outline"
-                          size={22}
-                          color="#ff4444"
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                )}
-              </View>
-            )}
-            ListEmptyComponent={
-              <Text
-                style={{ color: "#A98467", textAlign: "center", marginTop: 16 }}
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View
+          style={{
+            flex: 1,
+            padding: 24,
+            justifyContent: "flex-start",
+            alignItems: "center",
+            paddingTop: 56,
+          }}
+        >
+          <View style={{ width: "100%", maxWidth: 500 }}>
+            <TouchableOpacity
+              style={{
+                marginTop: 16,
+                marginBottom: 8,
+                alignSelf: "flex-start",
+                height: 28,
+                justifyContent: "center",
+              }}
+              onPress={() => router.push("/(auth)/sign-up/register")}
+            >
+              <Ionicons name="arrow-back" size={20} color="#6C584C" />
+            </TouchableOpacity>
+            <Text style={styles.title}>Cadastro de Nutricionistas</Text>
+            <Text style={styles.subtitle}>
+              Preencha os dados para cadastrar um novo nutricionista
+            </Text>
+            <View style={styles.formCard}>
+              <Text style={styles.formTitle}>Novo Nutricionista</Text>
+              <Text style={styles.inputLabel}>Nome</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Nome*"
+                placeholderTextColor="#A9A9A9"
+                value={form.nome}
+                onChangeText={(v) => handleChange("nome", v)}
+              />
+              <Text style={styles.inputLabel}>E-mail</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="E-mail*"
+                placeholderTextColor="#A9A9A9"
+                value={form.email}
+                onChangeText={(v) => handleChange("email", v)}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+              <Text style={styles.inputLabel}>Telefone</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Telefone"
+                placeholderTextColor="#A9A9A9"
+                value={form.telefone}
+                onChangeText={(v) =>
+                  handleChange("telefone", formatPhoneInput(v))
+                }
+                keyboardType="phone-pad"
+                maxLength={15}
+              />
+              <Text style={styles.inputLabel}>CRN</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="CRN*"
+                placeholderTextColor="#A9A9A9"
+                value={form.crn}
+                onChangeText={(v) => handleChange("crn", formatCRNInput(v))}
+                keyboardType="numeric"
+                maxLength={5}
+              />
+              <Text style={styles.inputLabel}>Senha (opcional)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Senha (opcional)"
+                placeholderTextColor="#A9A9A9"
+                value={form.senha}
+                onChangeText={(v) => handleChange("senha", v)}
+                secureTextEntry
+              />
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSave}
+                disabled={saving}
               >
-                Nenhum nutricionista cadastrado.
-              </Text>
-            }
-          />
-        )}
-      </View>
+                {saving ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Salvar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.listTitle}>Nutricionistas Cadastrados</Text>
+            {loading ? (
+              <ActivityIndicator
+                size="large"
+                color="#A98467"
+                style={{ marginTop: 24 }}
+              />
+            ) : (
+              <FlatList
+                data={nutricionistas}
+                keyExtractor={(item) => item.id}
+                style={{ marginTop: 12 }}
+                renderItem={({ item }) => (
+                  <View style={styles.nutriCard}>
+                    {editingId === item.id ? (
+                      <>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Nome*"
+                          placeholderTextColor="#A9A9A9"
+                          value={editForm.nome}
+                          onChangeText={(v) => handleEditChange("nome", v)}
+                        />
+                        <TextInput
+                          style={styles.input}
+                          placeholder="E-mail*"
+                          placeholderTextColor="#A9A9A9"
+                          value={editForm.email}
+                          onChangeText={(v) => handleEditChange("email", v)}
+                          autoCapitalize="none"
+                        />
+                        <Text style={styles.inputLabel}>Telefone</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Telefone"
+                          placeholderTextColor="#A9A9A9"
+                          value={editForm.telefone}
+                          onChangeText={(v) =>
+                            handleEditChange("telefone", formatPhoneInput(v))
+                          }
+                          keyboardType="phone-pad"
+                          maxLength={15}
+                        />
+                        <Text style={styles.inputLabel}>CRN</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="CRN*"
+                          placeholderTextColor="#A9A9A9"
+                          value={editForm.crn}
+                          onChangeText={(v) =>
+                            handleEditChange("crn", formatCRNInput(v))
+                          }
+                          keyboardType="numeric"
+                          maxLength={5}
+                        />
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "flex-end",
+                            marginTop: 8,
+                          }}
+                        >
+                          <TouchableOpacity
+                            style={[
+                              styles.saveButton,
+                              { marginRight: 8, backgroundColor: "#ADC178" },
+                            ]}
+                            onPress={handleUpdate}
+                          >
+                            <Text style={styles.saveButtonText}>Salvar</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[
+                              styles.saveButton,
+                              { backgroundColor: "#E1E1E1" },
+                            ]}
+                            onPress={cancelEdit}
+                          >
+                            <Text
+                              style={[
+                                styles.saveButtonText,
+                                { color: "#6C584C" },
+                              ]}
+                            >
+                              Cancelar
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </>
+                    ) : (
+                      <>
+                        <Text style={styles.nutriName}>{item.nome}</Text>
+                        <Text style={styles.nutriInfo}>
+                          Email: {item.email}
+                        </Text>
+                        <Text style={styles.nutriInfo}>
+                          Telefone: {item.telefone || "-"}
+                        </Text>
+                        <Text style={styles.nutriInfo}>CRN: {item.crn}</Text>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "flex-end",
+                            marginTop: 8,
+                          }}
+                        >
+                          <TouchableOpacity
+                            onPress={() => startEdit(item)}
+                            style={{ marginRight: 12 }}
+                          >
+                            <Ionicons
+                              name="create-outline"
+                              size={22}
+                              color="#A98467"
+                            />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => handleDelete(item.id)}
+                          >
+                            <Ionicons
+                              name="trash-outline"
+                              size={22}
+                              color="#ff4444"
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      </>
+                    )}
+                  </View>
+                )}
+                ListEmptyComponent={
+                  <Text
+                    style={{
+                      color: "#A98467",
+                      textAlign: "center",
+                      marginTop: 16,
+                    }}
+                  >
+                    Nenhum nutricionista cadastrado.
+                  </Text>
+                }
+                contentContainerStyle={{ paddingBottom: 40 }}
+              />
+            )}
+          </View>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -425,6 +517,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#A98467",
     marginBottom: 1,
+  },
+  inputLabel: {
+    fontSize: 15,
+    color: "#6C584C",
+    marginBottom: 6,
+    fontWeight: "600",
   },
 });
 
