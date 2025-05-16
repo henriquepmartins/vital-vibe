@@ -303,6 +303,12 @@ export default function RegisterScreen() {
                   <Text style={styles.registerLink}>Entrar</Text>
                 </TouchableOpacity>
               </View>
+              <TouchableOpacity
+                style={styles.restritoButton}
+                onPress={() => router.push("/admin/login")}
+              >
+                <Text style={styles.restritoButtonText}>Restrito</Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </View>
@@ -453,5 +459,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "bold",
     fontSize: width > 500 ? 15 : 14,
+  },
+  restritoButton: {
+    marginTop: 16,
+    alignSelf: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    backgroundColor: "#E1E1E1",
+  },
+  restritoButtonText: {
+    color: "#6C584C",
+    fontSize: 15,
+    fontWeight: "bold",
+    letterSpacing: 1,
   },
 });
