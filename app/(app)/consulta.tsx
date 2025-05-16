@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Alert,
   Text,
+  Platform,
 } from "react-native";
 import { type DateData } from "react-native-calendars";
 import { Picker } from "@react-native-picker/picker";
@@ -43,6 +44,7 @@ import AppointmentHeader from "../components/appointment/AppointmentHeader";
 import AppointmentSteps from "../components/appointment/AppointmentSteps";
 import { useChat } from "../contexts/ChatContext";
 import { useAppointment } from "../contexts/AppointmentContext";
+import NutritionistSelector from "../components/appointment/NutritionistSelector";
 
 const AppointmentScreen = ({ navigation }: any) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -79,15 +81,23 @@ const AppointmentScreen = ({ navigation }: any) => {
     const fetchAndSetTimeSlots = async () => {
       if (selectedDate) {
         setLoading(true);
+        console.log(
+          "[DEBUG] fetchAndSetTimeSlots - selectedDate:",
+          selectedDate
+        );
         const { data: appointments, error } = await supabase
           .from("appointments")
-          .select("start_time")
+          .select("start_time, date")
           .eq("date", selectedDate);
         if (error) {
           setLoading(false);
           Alert.alert("Erro", "Erro ao buscar horários agendados.");
           return;
         }
+        console.log(
+          "[DEBUG] fetchAndSetTimeSlots - appointments retornados:",
+          appointments
+        );
         const bookedTimes = (appointments || []).map((a) => {
           return a.start_time && a.start_time.length === 5
             ? a.start_time + ":00"
@@ -128,6 +138,11 @@ const AppointmentScreen = ({ navigation }: any) => {
   const handleDateSelect = (day: DateData) => {
     setSelectedDate(day.dateString);
     setSelectedTimeSlot("");
+    console.log("[DEBUG] handleDateSelect - selectedDate:", day.dateString);
+    console.log(
+      "[DEBUG] Device timezone offset (min):",
+      new Date().getTimezoneOffset()
+    );
   };
 
   const handleDurationSelect = (duration: AppointmentDuration) => {
@@ -200,7 +215,10 @@ const AppointmentScreen = ({ navigation }: any) => {
       reminder_time: new Date(selectedDate + "T" + startTime).toISOString(),
       nutricionista_id: selectedNutri,
     };
-    console.log("Dados enviados para o Supabase:", appointmentData);
+    console.log(
+      "[DEBUG] handleScheduleAppointment - appointmentData:",
+      appointmentData
+    );
     try {
       const { data, error } = await supabase
         .from("appointments")
@@ -242,35 +260,11 @@ const AppointmentScreen = ({ navigation }: any) => {
 
   const renderStep1 = () => (
     <>
-      <Text
-        style={{
-          fontWeight: "bold",
-          fontSize: 16,
-          marginBottom: 8,
-          marginLeft: 4,
-        }}
-      >
-        Nutricionista
-      </Text>
-      <View
-        style={{
-          backgroundColor: "#fff",
-          borderRadius: 8,
-          marginBottom: 16,
-          borderWidth: 1,
-          borderColor: "#DDE5B6",
-        }}
-      >
-        <Picker
-          selectedValue={selectedNutri}
-          onValueChange={(itemValue) => setSelectedNutri(itemValue)}
-          style={{ height: 48 }}
-        >
-          {nutricionistas.map((nutri) => (
-            <Picker.Item key={nutri.id} label={nutri.nome} value={nutri.id} />
-          ))}
-        </Picker>
-      </View>
+      <NutritionistSelector
+        nutricionistas={nutricionistas}
+        selectedNutri={selectedNutri}
+        setSelectedNutri={setSelectedNutri}
+      />
       <AppointmentCalendar
         selectedDate={selectedDate}
         handleDateSelect={handleDateSelect}

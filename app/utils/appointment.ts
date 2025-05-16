@@ -62,8 +62,9 @@ export const getAvailableTimeSlots = (
 // Format date for display
 export const formatDate = (dateString: string): string => {
   if (!dateString) return "";
-
-  const date = new Date(dateString);
+  // Parse manual para evitar UTC
+  const [year, month, day] = dateString.split("-");
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
   return date.toLocaleDateString("pt-BR", {
     weekday: "long",
     year: "numeric",

@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { formatDate } from "../utils/appointment";
 
 const { width, height } = Dimensions.get("window");
 const STATUSBAR_HEIGHT = StatusBar.currentHeight || 44;
@@ -68,12 +69,17 @@ const DashboardNutricionista = () => {
         data: { session },
       } = await supabase.auth.getSession();
       const userEmail = session?.user?.email;
+      console.log("[DEBUG] fetchNutriId - userEmail:", userEmail);
       if (!userEmail) return;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("nutricionistas")
         .select("id, nome")
         .eq("email", userEmail)
         .single();
+      if (error) {
+        console.error("[DEBUG] fetchNutriId - error:", error);
+      }
+      if (data?.id) console.log("[DEBUG] fetchNutriId - nutriId:", data.id);
       if (data?.id) setNutriId(data.id);
       if (data?.nome) setUserName(data.nome.split(" ")[0]);
     }
@@ -81,45 +87,55 @@ const DashboardNutricionista = () => {
   }, []);
 
   useEffect(() => {
-    if (!nutriId) return;
-    // Buscar consultas do dia e pacientes do nutricionista
+    if (!nutriId) {
+      console.log("[DEBUG] useEffect[nutriId] - nutriId ainda não definido");
+      return;
+    }
+    // Buscar próximas consultas e pacientes do nutricionista
     async function fetchData() {
       setLoading(true);
-      // Consultas do dia
-      const today = new Date().toISOString().split("T")[0];
-      const { data: consultasData } = await supabase
-        .from("appointments")
-        .select(
-          "id, start_time, appointment_type, status, users:users(name, email)"
-        )
-        .eq("nutricionista_id", nutriId)
-        .eq("date", today)
-        .order("start_time", { ascending: true });
-      setConsultas(
-        (consultasData as any[])
-          ? (consultasData as any[]).map((item) => ({
-              ...item,
-              users: Array.isArray(item.users) ? item.users[0] : item.users,
-            }))
-          : []
-      );
-      // Pacientes atendidos (únicos)
-      const { data: pacientesData } = await supabase
-        .from("appointments")
-        .select("user_id, users:users(name, email)")
-        .eq("nutricionista_id", nutriId);
-      // Remover duplicados por user_id
-      const uniquePacientes: Paciente[] = [];
-      const seen = new Set();
-      (pacientesData as any[]).forEach((item) => {
-        const userObj = Array.isArray(item.users) ? item.users[0] : item.users;
-        if (userObj && !seen.has(item.user_id)) {
-          seen.add(item.user_id);
-          uniquePacientes.push({ user_id: item.user_id, users: userObj });
+      try {
+        // Próximas consultas
+        const today = new Date().toISOString().split("T")[0];
+        const { data: consultasData, error: consultasError } = await supabase
+          .from("appointments")
+          .select("id, date, start_time, appointment_type, status, user_id")
+          .eq("nutricionista_id", nutriId)
+          .gte("date", today)
+          .order("date", { ascending: true })
+          .order("start_time", { ascending: true });
+        if (consultasError) {
+          console.error("[DEBUG] fetchData - consultasError:", consultasError);
         }
-      });
-      setPacientes(uniquePacientes);
-      setLoading(false);
+        console.log("[DEBUG] fetchData - consultasData:", consultasData);
+        setConsultas(Array.isArray(consultasData) ? consultasData : []);
+        // Pacientes atendidos (únicos)
+        const { data: pacientesData, error: pacientesError } = await supabase
+          .from("appointments")
+          .select("user_id")
+          .eq("nutricionista_id", nutriId);
+        if (pacientesError) {
+          console.error("[DEBUG] fetchData - pacientesError:", pacientesError);
+        }
+        console.log("[DEBUG] fetchData - pacientesData:", pacientesData);
+        // Remover duplicados por user_id
+        const uniquePacientes: Paciente[] = [];
+        const seen = new Set();
+        ((pacientesData as any[]) || []).forEach((item) => {
+          if (item.user_id && !seen.has(item.user_id)) {
+            seen.add(item.user_id);
+            uniquePacientes.push({
+              user_id: item.user_id,
+              users: { name: item.user_id, email: "" },
+            });
+          }
+        });
+        setPacientes(uniquePacientes);
+      } catch (err) {
+        console.error("[DEBUG] fetchData - erro inesperado:", err);
+      } finally {
+        setLoading(false);
+      }
     }
     fetchData();
   }, [nutriId]);
@@ -208,14 +224,14 @@ const DashboardNutricionista = () => {
             {/* CONSULTAS DO DIA */}
             <View style={styles.sectionContainer}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Consultas do Dia</Text>
+                <Text style={styles.sectionTitle}>Próximas Consultas</Text>
               </View>
               {loading ? (
                 <ActivityIndicator color="#ADC178" />
               ) : consultas.length === 0 ? (
                 <View style={styles.emptyContainer}>
                   <Text style={styles.emptyText}>
-                    Nenhuma consulta agendada para hoje.
+                    Nenhuma consulta futura encontrada.
                   </Text>
                 </View>
               ) : (
@@ -226,11 +242,14 @@ const DashboardNutricionista = () => {
                     <View style={styles.appointmentCard}>
                       <View style={styles.appointmentInfo}>
                         <Text style={styles.appointmentName}>
-                          {item.users?.name || "Paciente"}
+                          Paciente: {item.user_id}
                         </Text>
                         <Text style={styles.appointmentDescription}>
-                          {item.start_time?.substring(0, 5)} -{" "}
                           {item.appointment_type}
+                        </Text>
+                        <Text style={styles.appointmentDescription}>
+                          {formatDate(item.date)} -{" "}
+                          {item.start_time?.substring(0, 5)}
                         </Text>
                       </View>
                       <View style={styles.appointmentActions}>
@@ -268,10 +287,10 @@ const DashboardNutricionista = () => {
                     <View style={styles.appointmentCard}>
                       <View style={styles.appointmentInfo}>
                         <Text style={styles.appointmentName}>
-                          {item.users?.name}
+                          Paciente: {item.user_id}
                         </Text>
                         <Text style={styles.appointmentDescription}>
-                          {item.users?.email}
+                          {/* Email não disponível sem join */}
                         </Text>
                       </View>
                       <View style={styles.appointmentActions}>
