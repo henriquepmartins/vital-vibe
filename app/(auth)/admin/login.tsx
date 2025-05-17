@@ -34,7 +34,6 @@ const AdminLoginScreen = () => {
         setLoading(false);
         return;
       }
-      // Aqui você pode salvar o estado de admin logado em um contexto, se desejar
       router.replace("/admin/dashboard");
     } catch (err) {
       setError("Erro ao tentar logar.");
@@ -52,6 +51,7 @@ const AdminLoginScreen = () => {
       <TextInput
         style={styles.input}
         placeholder="E-mail"
+        placeholderTextColor="#a9a9a9"
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
@@ -60,6 +60,7 @@ const AdminLoginScreen = () => {
       <TextInput
         style={styles.input}
         placeholder="Senha"
+        placeholderTextColor="#a9a9a9"
         secureTextEntry
         value={senha}
         onChangeText={setSenha}

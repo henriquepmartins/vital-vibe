@@ -44,19 +44,13 @@ export const HydrationProvider: React.FC<{ children: React.ReactNode }> = ({
   const fetchHydrationData = async () => {
     try {
       setIsLoading(true);
-      console.log("Iniciando busca de dados de hidratação...");
 
       const {
         data: { session },
       } = await supabase.auth.getSession();
       const userId = session?.user?.id;
-
       if (!userId) {
-        console.error("Usuário não autenticado");
-        Alert.alert(
-          "Erro",
-          "Usuário não autenticado. Por favor, faça login novamente."
-        );
+        setIsLoading(false);
         return;
       }
 
@@ -103,10 +97,6 @@ export const HydrationProvider: React.FC<{ children: React.ReactNode }> = ({
           );
         } else {
           console.error("Erro ao buscar dados de hidratação:", error);
-          Alert.alert(
-            "Erro",
-            "Não foi possível carregar os dados de hidratação. Por favor, tente novamente."
-          );
         }
         return;
       }
@@ -144,13 +134,9 @@ export const HydrationProvider: React.FC<{ children: React.ReactNode }> = ({
         data: { session },
       } = await supabase.auth.getSession();
       const userId = session?.user?.id;
-
       if (!userId) {
-        console.error("Usuário não autenticado");
-        Alert.alert(
-          "Erro",
-          "Usuário não autenticado. Por favor, faça login novamente."
-        );
+        console.error("Usuário não autenticado (hydration update)");
+        setIsLoading(false);
         return;
       }
 

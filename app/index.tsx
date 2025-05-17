@@ -95,7 +95,6 @@ export default function LoginScreen({
       }
       setLoading(true);
       try {
-        // Buscar e-mail pelo CRN
         const { data: nutri, error: nutriError } = await supabase
           .from("nutricionistas")
           .select("email")
@@ -106,7 +105,6 @@ export default function LoginScreen({
           setLoading(false);
           return;
         }
-        // Autenticar no Auth
         const { data, error } = await supabase.auth.signInWithPassword({
           email: nutri.email,
           password: password,
@@ -133,9 +131,17 @@ export default function LoginScreen({
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardView}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
         >
           <View style={styles.phoneContainer}>
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <ScrollView
+              contentContainerStyle={[
+                styles.scrollContainer,
+                { paddingBottom: 40 },
+              ]}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
               <View style={styles.coloredBackground}>
                 <Image
                   source={require("@/assets/images/login.png")}

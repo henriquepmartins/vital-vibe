@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 interface AppointmentContextType {
   appointmentCount: number;
@@ -14,6 +15,7 @@ export const AppointmentProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [appointmentCount, setAppointmentCount] = useState<number>(0);
+  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
   const fetchAppointmentCount = async () => {
     try {
@@ -25,7 +27,6 @@ export const AppointmentProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("[AppointmentContext] userId:", userId);
 
       if (!userId) {
-        console.error("Usuário não autenticado");
         setAppointmentCount(0);
         return;
       }
@@ -58,6 +59,37 @@ export const AppointmentProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     fetchAppointmentCount();
+    // Live reload com Supabase Realtime
+    let sub: RealtimeChannel | null = null;
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) return;
+      sub = supabase
+        .channel("public:appointments")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "appointments",
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            // Só atualiza se for relevante (insert, update, delete)
+            fetchAppointmentCount();
+          }
+        )
+        .subscribe();
+      setChannel(sub);
+    })();
+    return () => {
+      if (sub) {
+        supabase.removeChannel(sub);
+      }
+    };
   }, []);
 
   const refreshAppointmentCount = async () => {

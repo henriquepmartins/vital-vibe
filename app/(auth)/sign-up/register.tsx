@@ -195,6 +195,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Seu nome completo"
+                  placeholderTextColor="#A98467"
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
@@ -205,6 +206,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="seu@email.com"
+                  placeholderTextColor="#A98467"
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -216,6 +218,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="000.000.000-00"
+                  placeholderTextColor="#A98467"
                   value={cpf}
                   onChangeText={handleCPFChange}
                   keyboardType="numeric"
@@ -227,6 +230,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="(00) 00000-0000"
+                  placeholderTextColor="#A98467"
                   value={phone}
                   onChangeText={(text) => setPhone(formatPhoneInput(text))}
                   keyboardType="phone-pad"
@@ -237,6 +241,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="DD/MM/AAAA"
+                  placeholderTextColor="#A98467"
                   value={birthdate}
                   onChangeText={(text) =>
                     setBirthdate(formatBirthdateInput(text))
@@ -251,6 +256,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Ex: 170"
+                  placeholderTextColor="#A98467"
                   value={height}
                   onChangeText={setHeight}
                   keyboardType="numeric"
@@ -261,6 +267,7 @@ export default function RegisterScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Ex: 70"
+                  placeholderTextColor="#A98467"
                   value={weight}
                   onChangeText={setWeight}
                   keyboardType="numeric"
@@ -272,6 +279,7 @@ export default function RegisterScreen() {
                   <TextInput
                     style={styles.input}
                     placeholder="********"
+                    placeholderTextColor="#A98467"
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={secureTextEntry}

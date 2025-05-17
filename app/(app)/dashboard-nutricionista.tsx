@@ -195,16 +195,12 @@ const DashboardNutricionista = () => {
           onPress: async () => {
             const { error } = await supabase
               .from("appointments")
-              .update({ status: "cancelled" })
+              .delete()
               .eq("id", consultaId);
             if (error) {
               Alert.alert("Erro", "Não foi possível cancelar a consulta.");
             } else {
-              setConsultas((prev) =>
-                prev.map((c) =>
-                  c.id === consultaId ? { ...c, status: "cancelled" } : c
-                )
-              );
+              setConsultas((prev) => prev.filter((c) => c.id !== consultaId));
               Alert.alert(
                 "Consulta cancelada",
                 "A consulta foi cancelada com sucesso."

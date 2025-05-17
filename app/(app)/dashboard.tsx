@@ -13,6 +13,7 @@ import {
   Platform,
   StatusBar,
   Modal,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -166,13 +167,23 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
         }
       } catch (err) {
         setUserMealPlan(null);
-        Toast.show({ type: "error", text1: "Erro ao buscar plano alimentar" });
-        console.error("Erro ao buscar plano alimentar:", err);
       } finally {
         setLoadingMealPlan(false);
       }
     }
     fetchMealPlan();
+  }, []);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) {
+        router.replace("/");
+      }
+    };
+    checkAuth();
   }, []);
 
   useFocusEffect(
@@ -291,6 +302,38 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
       item.appointment_type
     );
 
+    const handleCancelAppointment = async () => {
+      Alert.alert(
+        "Cancelar consulta",
+        "Tem certeza que deseja cancelar esta consulta?",
+        [
+          { text: "Não", style: "cancel" },
+          {
+            text: "Sim",
+            style: "destructive",
+            onPress: async () => {
+              const { error } = await supabase
+                .from("appointments")
+                .delete()
+                .eq("id", item.id);
+              if (error) {
+                Alert.alert("Erro", "Não foi possível cancelar a consulta.");
+              } else {
+                // Atualiza a lista localmente
+                setUpcomingAppointments((prev) =>
+                  prev.filter((a) => a.id !== item.id)
+                );
+                Toast.show({
+                  type: "success",
+                  text1: "Consulta cancelada com sucesso!",
+                });
+              }
+            },
+          },
+        ]
+      );
+    };
+
     return (
       <View style={styles.appointmentCard}>
         <View style={styles.appointmentInfo}>
@@ -338,6 +381,24 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
               {item.status === "scheduled" ? "Reagendar" : "Confirmar"}
             </Text>
           </TouchableOpacity>
+          {/* Botão de cancelar consulta */}
+          {item.status === "scheduled" && (
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                {
+                  backgroundColor: "#ffdddd",
+                  borderColor: "#ff4444",
+                  marginLeft: 8,
+                },
+              ]}
+              onPress={handleCancelAppointment}
+            >
+              <Text style={[styles.actionButtonText, { color: "#ff4444" }]}>
+                Cancelar
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     );
