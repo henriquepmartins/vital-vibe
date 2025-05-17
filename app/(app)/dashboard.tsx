@@ -12,6 +12,7 @@ import {
   Dimensions,
   Platform,
   StatusBar,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,6 +23,7 @@ import { useAppointment } from "../contexts/AppointmentContext";
 import { useHydration } from "../contexts/HydrationContext";
 import { ChatBot } from "../components/chat/ChatBot";
 import { useFocusEffect } from "@react-navigation/native";
+import { getIconForMeal, CutleryIcon } from "../utils/icons";
 
 const availableSlots = [
   { id: "1", period: "Manhã", time: "11:00" },
@@ -76,6 +78,12 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   const { appointmentCount } = useAppointment();
   const { waterProgress, totalWaterGoal, waterIntake, handleWaterIntake } =
     useHydration();
+  const [userMealPlan, setUserMealPlan] = useState<null | {
+    descricao: string;
+    refeicoes: { type: string; description: string }[];
+  }>(null);
+  const [loadingMealPlan, setLoadingMealPlan] = useState(true);
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -119,6 +127,53 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
       }
     }
     fetchUserName();
+  }, []);
+
+  useEffect(() => {
+    async function fetchMealPlan() {
+      setLoadingMealPlan(true);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) {
+        setUserMealPlan(null);
+        setLoadingMealPlan(false);
+        return;
+      }
+      try {
+        const { data, error } = await supabase
+          .from("planos_alimentares")
+          .select("descricao, refeicoes")
+          .eq("paciente_id", userId)
+          .order("validade_inicio", { ascending: false })
+          .limit(1)
+          .single();
+        if (error) throw error;
+        if (
+          data &&
+          data.refeicoes &&
+          Array.isArray(data.refeicoes) &&
+          data.refeicoes.length > 0
+        ) {
+          setUserMealPlan({
+            descricao: data.descricao,
+            refeicoes: data.refeicoes,
+          });
+        } else {
+          setUserMealPlan(null);
+        }
+      } catch (err) {
+        setUserMealPlan(null);
+        if (typeof window !== "undefined" && window?.toast) {
+          window.toast("Erro ao buscar plano alimentar", { type: "error" });
+        }
+        console.error("Erro ao buscar plano alimentar:", err);
+      } finally {
+        setLoadingMealPlan(false);
+      }
+    }
+    fetchMealPlan();
   }, []);
 
   useFocusEffect(
@@ -513,32 +568,179 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
             <View style={styles.sectionContainer}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Plano Alimentar de Hoje</Text>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate("Agendamento")}
-                >
-                  <Text style={styles.seeAllText}>Ver completo</Text>
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity
-                style={styles.mealPlanCard}
-                onPress={() => navigation.navigate("Agendamento")}
-              >
-                <View style={styles.mealPlanContent}>
-                  <View style={styles.mealPlanInfo}>
-                    <Text style={styles.mealPlanTitle}>Café da Manhã</Text>
-                    <Text style={styles.mealPlanDescription}>
-                      1 fatia de pão integral{"\n"}1 ovo mexido{"\n"}1 xícara de
-                      chá verde
+                {userMealPlan && (
+                  <TouchableOpacity onPress={() => setDrawerVisible(true)}>
+                    <Text style={[styles.seeAllText, { color: "#6C584C" }]}>
+                      Ver completo
                     </Text>
-                  </View>
-                  <Ionicons
-                    name="restaurant-outline"
-                    size={40}
-                    color="#ADC178"
-                  />
+                  </TouchableOpacity>
+                )}
+              </View>
+              {loadingMealPlan ? (
+                <View style={styles.loadingContainer}>
+                  <Text style={styles.loadingText}>
+                    Carregando plano alimentar...
+                  </Text>
                 </View>
-              </TouchableOpacity>
+              ) : userMealPlan ? (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setDrawerVisible(true)}
+                  style={{ marginBottom: 12 }}
+                >
+                  <View
+                    style={{
+                      backgroundColor: "#fff",
+                      borderRadius: 14,
+                      padding: 18,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.07,
+                      shadowRadius: 6,
+                      elevation: 2,
+                    }}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          fontWeight: "bold",
+                          fontSize: 16,
+                          marginBottom: 4,
+                          color: "#333",
+                        }}
+                      >
+                        {userMealPlan.refeicoes[0]?.type || "Refeição"}
+                      </Text>
+                      <Text
+                        style={{ color: "#666", fontSize: 15, lineHeight: 22 }}
+                      >
+                        {(userMealPlan.refeicoes[0]?.description || "-")
+                          .split("\n")
+                          .map((line, idx) => (
+                            <Text key={idx} style={{ color: "#666" }}>
+                              {line}
+                              {"\n"}
+                            </Text>
+                          ))}
+                      </Text>
+                    </View>
+                    <CutleryIcon />
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>
+                    Você ainda não possui um plano alimentar.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.scheduleButton}
+                    onPress={() => navigation.navigate("Agendamento")}
+                  >
+                    <Text style={styles.scheduleButtonText}>
+                      Agendar Consulta
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
+
+            {/* Drawer/Modal para o plano completo */}
+            <Modal
+              visible={drawerVisible}
+              animationType="slide"
+              transparent={true}
+              onRequestClose={() => setDrawerVisible(false)}
+            >
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: "rgba(0,0,0,0.18)",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <View
+                  style={{
+                    backgroundColor: "#fff",
+                    borderTopLeftRadius: 24,
+                    borderTopRightRadius: 24,
+                    padding: 24,
+                    minHeight: "60%",
+                    maxHeight: "90%",
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: 18,
+                        color: "#333",
+                      }}
+                    >
+                      {userMealPlan?.descricao}
+                    </Text>
+                    <TouchableOpacity onPress={() => setDrawerVisible(false)}>
+                      <Ionicons name="close" size={28} color="#6C584C" />
+                    </TouchableOpacity>
+                  </View>
+                  <ScrollView showsVerticalScrollIndicator={false}>
+                    {userMealPlan?.refeicoes.map((meal, idx) => (
+                      <View
+                        key={idx}
+                        style={{
+                          backgroundColor: "#F8F9FA",
+                          borderRadius: 14,
+                          padding: 16,
+                          marginBottom: 14,
+                          flexDirection: "row",
+                          alignItems: "flex-start",
+                        }}
+                      >
+                        <View style={{ marginRight: 12, marginTop: 2 }}>
+                          {getIconForMeal(meal.type)}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              fontWeight: "bold",
+                              fontSize: 15,
+                              color: "#333",
+                              marginBottom: 2,
+                            }}
+                          >
+                            {meal.type}
+                          </Text>
+                          <Text
+                            style={{
+                              color: "#666",
+                              fontSize: 15,
+                              lineHeight: 22,
+                            }}
+                          >
+                            {(meal.description || "-")
+                              .split("\n")
+                              .map((line, i) => (
+                                <Text key={i} style={{ color: "#666" }}>
+                                  {line}
+                                  {"\n"}
+                                </Text>
+                              ))}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              </View>
+            </Modal>
 
             <View style={styles.chatSectionContainer}>
               <View style={styles.sectionHeader}>

@@ -23,9 +23,11 @@ const STATUSBAR_HEIGHT = StatusBar.currentHeight || 44;
 
 interface Consulta {
   id: string;
+  date: string;
   start_time: string;
   appointment_type: string;
   status: string;
+  user_id: string;
   users?: { name: string; email: string };
 }
 interface Paciente {
