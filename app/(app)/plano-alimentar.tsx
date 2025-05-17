@@ -21,6 +21,7 @@ import {
 } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { getIconForMeal } from "../utils/icons";
+import Toast from "react-native-toast-message";
 
 const PALETTE = {
   primary: "#ADC178",
@@ -64,9 +65,9 @@ const PlanoAlimentar = () => {
   const [saving, setSaving] = useState(false);
   const [planoId, setPlanoId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
-  const [meals, setMeals] = useState<{ type: string; description: string }[]>(
-    []
-  );
+  const [meals, setMeals] = useState<
+    { type: string; description: string; isFixed?: boolean }[]
+  >([]);
   const [newMealType, setNewMealType] = useState("");
 
   useEffect(() => {
@@ -111,11 +112,10 @@ const PlanoAlimentar = () => {
       (m) => m.type.trim().toLowerCase() === newMealType.trim().toLowerCase()
     );
     if (exists) {
-      if (typeof window !== "undefined" && window?.toast) {
-        window.toast("Já existe uma refeição com esse nome.", {
-          type: "error",
-        });
-      }
+      Toast.show({
+        type: "error",
+        text1: "Já existe uma refeição com esse nome.",
+      });
       return;
     }
     setMeals((prev) => [
@@ -151,19 +151,22 @@ const PlanoAlimentar = () => {
         refeicoes: meals,
         validade_inicio: hoje,
       };
-      const { data: upsertData, error } = await supabase
+      const { data: upsertData, error } = (await supabase
         .from("planos_alimentares")
-        .upsert([upsertObj]);
+        .upsert([upsertObj])) as { data: { id: string }[] | null; error: any };
       if (error) {
-        if (typeof window !== "undefined" && window?.toast) {
-          window.toast("Erro ao salvar plano alimentar", { type: "error" });
-        }
+        Toast.show({ type: "error", text1: "Erro ao salvar plano alimentar" });
         throw error;
       }
-      setPlanoId(upsertData?.[0]?.id || planoId);
-      if (typeof window !== "undefined" && window?.toast) {
-        window.toast("Plano alimentar salvo com sucesso!", { type: "success" });
-      }
+      const newId =
+        Array.isArray(upsertData) && upsertData[0]?.id
+          ? upsertData[0].id
+          : planoId;
+      setPlanoId(newId);
+      Toast.show({
+        type: "success",
+        text1: "Plano alimentar salvo com sucesso!",
+      });
       router.back();
     } catch (err) {
       console.error("[SALVAR PLANO] Erro ao salvar:", err);

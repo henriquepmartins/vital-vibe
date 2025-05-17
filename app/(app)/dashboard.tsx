@@ -24,6 +24,7 @@ import { useHydration } from "../contexts/HydrationContext";
 import { ChatBot } from "../components/chat/ChatBot";
 import { useFocusEffect } from "@react-navigation/native";
 import { getIconForMeal, CutleryIcon } from "../utils/icons";
+import Toast from "react-native-toast-message";
 
 const availableSlots = [
   { id: "1", period: "Manhã", time: "11:00" },
@@ -165,9 +166,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
         }
       } catch (err) {
         setUserMealPlan(null);
-        if (typeof window !== "undefined" && window?.toast) {
-          window.toast("Erro ao buscar plano alimentar", { type: "error" });
-        }
+        Toast.show({ type: "error", text1: "Erro ao buscar plano alimentar" });
         console.error("Erro ao buscar plano alimentar:", err);
       } finally {
         setLoadingMealPlan(false);
