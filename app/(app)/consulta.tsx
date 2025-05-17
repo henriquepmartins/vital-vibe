@@ -294,32 +294,44 @@ const AppointmentScreen = ({ navigation }: any) => {
     </>
   );
 
-  const renderStep2 = () => (
-    <>
-      <AppointmentSummary
-        selectedDate={selectedDate}
-        appointmentDuration={appointmentDuration}
-        selectedTimeSlot={selectedTimeSlot}
-        formatDate={formatDate}
-        getTimeSlotById={getTimeSlotById}
-        nutritionist={NUTRITIONIST}
-      />
-      <AppointmentTypes
-        appointmentType={appointmentType}
-        handleAppointmentTypeSelect={handleAppointmentTypeSelect}
-      />
-      <ReminderOptions
-        reminderTime={reminderTime}
-        handleReminderSelect={handleReminderSelect}
-      />
-      <CancellationPolicy />
-      <StepButtons
-        currentStep={currentStep}
-        setCurrentStep={setCurrentStep}
-        onConfirm={handleScheduleAppointment}
-      />
-    </>
-  );
+  const renderStep2 = () => {
+    const selectedNutritionist = nutricionistas.find(
+      (n) => n.id === selectedNutri
+    );
+    return (
+      <>
+        <AppointmentSummary
+          selectedDate={selectedDate}
+          appointmentDuration={appointmentDuration}
+          selectedTimeSlot={selectedTimeSlot}
+          formatDate={formatDate}
+          getTimeSlotById={getTimeSlotById}
+          nutritionist={{
+            id: selectedNutritionist?.id || "",
+            name: selectedNutritionist?.nome || "",
+            specialty: "",
+            photoUrl: "",
+            phone: "",
+            email: "",
+          }}
+        />
+        <AppointmentTypes
+          appointmentType={appointmentType}
+          handleAppointmentTypeSelect={handleAppointmentTypeSelect}
+        />
+        <ReminderOptions
+          reminderTime={reminderTime}
+          handleReminderSelect={handleReminderSelect}
+        />
+        <CancellationPolicy />
+        <StepButtons
+          currentStep={currentStep}
+          setCurrentStep={setCurrentStep}
+          onConfirm={handleScheduleAppointment}
+        />
+      </>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>

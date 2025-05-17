@@ -10,6 +10,7 @@ import {
   Dimensions,
   Platform,
   StatusBar,
+  Alert,
 } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,7 +21,6 @@ import { formatDate } from "../utils/appointment";
 const { width, height } = Dimensions.get("window");
 const STATUSBAR_HEIGHT = StatusBar.currentHeight || 44;
 
-// Definir tipos para consultas e pacientes
 interface Consulta {
   id: string;
   start_time: string;
@@ -110,11 +110,9 @@ const DashboardNutricionista = () => {
       console.log("[DEBUG] useEffect[nutriId] - nutriId ainda não definido");
       return;
     }
-    // Buscar próximas consultas e pacientes do nutricionista
     async function fetchData() {
       setLoading(true);
       try {
-        // Próximas consultas
         const today = new Date().toISOString().split("T")[0];
         const { data: consultasData, error: consultasError } = await supabase
           .from("appointments")
@@ -128,11 +126,10 @@ const DashboardNutricionista = () => {
         }
         const consultasArr = Array.isArray(consultasData) ? consultasData : [];
         setConsultas(consultasArr);
-        // Buscar nomes dos pacientes das consultas
+
         const userIdsConsultas = [
           ...new Set(consultasArr.map((c) => c.user_id)),
         ];
-        // Pacientes atendidos (únicos)
         const { data: pacientesData, error: pacientesError } = await supabase
           .from("appointments")
           .select("user_id")
@@ -152,7 +149,7 @@ const DashboardNutricionista = () => {
           }
         });
         setPacientes(uniquePacientes);
-        // Buscar nomes dos pacientes atendidos
+
         const userIdsPacientes = uniquePacientes.map((p) => p.user_id);
         const allUserIds = Array.from(
           new Set([...userIdsConsultas, ...userIdsPacientes])
@@ -182,6 +179,45 @@ const DashboardNutricionista = () => {
     }
     fetchData();
   }, [nutriId]);
+
+  // Função para cancelar consulta
+  async function cancelarConsulta(consultaId: string) {
+    Alert.alert(
+      "Cancelar consulta",
+      "Tem certeza que deseja cancelar esta consulta?",
+      [
+        { text: "Não", style: "cancel" },
+        {
+          text: "Sim",
+          style: "destructive",
+          onPress: async () => {
+            const { error } = await supabase
+              .from("appointments")
+              .update({ status: "cancelled" })
+              .eq("id", consultaId);
+            if (error) {
+              Alert.alert("Erro", "Não foi possível cancelar a consulta.");
+            } else {
+              setConsultas((prev) =>
+                prev.map((c) =>
+                  c.id === consultaId ? { ...c, status: "cancelled" } : c
+                )
+              );
+              Alert.alert(
+                "Consulta cancelada",
+                "A consulta foi cancelada com sucesso."
+              );
+            }
+          },
+        },
+      ]
+    );
+  }
+
+  const consultasAtivas = consultas.filter((c) => c.status !== "cancelled");
+  const pacientesAtivos = pacientes.filter((p) =>
+    consultas.some((c) => c.user_id === p.user_id && c.status !== "cancelled")
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
@@ -242,7 +278,9 @@ const DashboardNutricionista = () => {
                         />
                       </View>
                       <View>
-                        <Text style={styles.statValue}>{consultas.length}</Text>
+                        <Text style={styles.statValue}>
+                          {consultasAtivas.length}
+                        </Text>
                         <Text style={styles.statLabel}>Consultas</Text>
                       </View>
                     </View>
@@ -255,7 +293,9 @@ const DashboardNutricionista = () => {
                         />
                       </View>
                       <View>
-                        <Text style={styles.statValue}>{pacientes.length}</Text>
+                        <Text style={styles.statValue}>
+                          {pacientesAtivos.length}
+                        </Text>
                         <Text style={styles.statLabel}>Pacientes</Text>
                       </View>
                     </View>
@@ -271,7 +311,7 @@ const DashboardNutricionista = () => {
               </View>
               {loading ? (
                 <ActivityIndicator color="#ADC178" />
-              ) : consultas.length === 0 ? (
+              ) : consultasAtivas.length === 0 ? (
                 <View style={styles.emptyContainer}>
                   <Text style={styles.emptyText}>
                     Nenhuma consulta futura encontrada.
@@ -279,7 +319,7 @@ const DashboardNutricionista = () => {
                 </View>
               ) : (
                 <FlatList
-                  data={consultas}
+                  data={consultasAtivas}
                   keyExtractor={(item) => item.id}
                   renderItem={({ item }) => (
                     <View style={styles.appointmentCard}>
@@ -299,7 +339,32 @@ const DashboardNutricionista = () => {
                         <View style={styles.statusBadge}>
                           <Text style={styles.statusText}>{item.status}</Text>
                         </View>
-                        {/* Botões de reagendar/cancelar aqui */}
+                        {item.status !== "cancelled" && (
+                          <TouchableOpacity
+                            style={[
+                              styles.actionButton,
+                              {
+                                backgroundColor: "#ffdddd",
+                                borderColor: "#ff4444",
+                              },
+                            ]}
+                            onPress={() => cancelarConsulta(item.id)}
+                          >
+                            <Ionicons
+                              name="close-circle-outline"
+                              size={20}
+                              color="#ff4444"
+                            />
+                            <Text
+                              style={[
+                                styles.actionButtonText,
+                                { color: "#ff4444" },
+                              ]}
+                            >
+                              Cancelar
+                            </Text>
+                          </TouchableOpacity>
+                        )}
                       </View>
                     </View>
                   )}
@@ -309,14 +374,13 @@ const DashboardNutricionista = () => {
                 />
               )}
             </View>
-            {/* PACIENTES ATENDIDOS */}
             <View style={styles.sectionContainer}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Pacientes Atendidos</Text>
+                <Text style={styles.sectionTitle}>Consultas</Text>
               </View>
               {loading ? (
                 <ActivityIndicator color="#ADC178" />
-              ) : pacientes.length === 0 ? (
+              ) : pacientesAtivos.length === 0 ? (
                 <View style={styles.emptyContainer}>
                   <Text style={styles.emptyText}>
                     Nenhum paciente encontrado.
@@ -324,7 +388,7 @@ const DashboardNutricionista = () => {
                 </View>
               ) : (
                 <FlatList
-                  data={pacientes}
+                  data={pacientesAtivos}
                   keyExtractor={(item) => item.user_id}
                   renderItem={({ item }) => {
                     // Buscar a última consulta desse paciente

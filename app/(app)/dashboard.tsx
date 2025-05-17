@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   View,
@@ -21,6 +21,7 @@ import { router } from "expo-router";
 import { useAppointment } from "../contexts/AppointmentContext";
 import { useHydration } from "../contexts/HydrationContext";
 import { ChatBot } from "../components/chat/ChatBot";
+import { useFocusEffect } from "@react-navigation/native";
 
 const availableSlots = [
   { id: "1", period: "Manhã", time: "11:00" },
@@ -120,9 +121,11 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
     fetchUserName();
   }, []);
 
-  useEffect(() => {
-    fetchAppointments();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchAppointments();
+    }, [])
+  );
 
   const fetchAppointments = async () => {
     try {
@@ -188,7 +191,9 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   }, [upcomingAppointments]);
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    if (!dateString) return "";
+    const [year, month, day] = dateString.split("-");
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
     const options = { weekday: "long", day: "numeric", month: "long" } as const;
     const formattedDate = date.toLocaleDateString("pt-BR", options);
 
@@ -309,7 +314,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
 
     return (
       <FlatList
-        data={upcomingAppointments}
+        data={upcomingAppointments.filter((a) => a.status !== "cancelled")}
         renderItem={renderAppointmentItem}
         keyExtractor={(item) => item.id}
         scrollEnabled={false}
