@@ -14,6 +14,7 @@ import {
   StatusBar,
   Modal,
   Alert,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -86,6 +87,11 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   }>(null);
   const [loadingMealPlan, setLoadingMealPlan] = useState(true);
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [searchDrawerVisible, setSearchDrawerVisible] = useState(false);
+  const [notificationDrawerVisible, setNotificationDrawerVisible] =
+    useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [chatBotOpen, setChatBotOpen] = useState(false);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -467,14 +473,14 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
                   <View style={styles.headerRight}>
                     <TouchableOpacity
                       style={styles.iconButton}
-                      onPress={() => {}}
+                      onPress={() => setSearchDrawerVisible(true)}
                     >
                       <Ionicons name="search-outline" size={22} color="white" />
                     </TouchableOpacity>
 
                     <TouchableOpacity
                       style={styles.notificationButton}
-                      onPress={() => {}}
+                      onPress={() => setNotificationDrawerVisible(true)}
                     >
                       <Ionicons
                         name="notifications-outline"
@@ -802,13 +808,156 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
               </View>
             </Modal>
 
+            {/* Drawers */}
+            <Modal
+              visible={searchDrawerVisible}
+              animationType="slide"
+              transparent={true}
+              onRequestClose={() => setSearchDrawerVisible(false)}
+            >
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: "rgba(0,0,0,0.18)",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <View
+                  style={{
+                    backgroundColor: "#fff",
+                    borderTopLeftRadius: 24,
+                    borderTopRightRadius: 24,
+                    padding: 24,
+                    minHeight: 180,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: 18,
+                        color: "#333",
+                      }}
+                    >
+                      Buscar
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setSearchDrawerVisible(false)}
+                    >
+                      <Ionicons name="close" size={28} color="#6C584C" />
+                    </TouchableOpacity>
+                  </View>
+                  <TextInput
+                    style={{
+                      backgroundColor: "#F8F9FA",
+                      borderRadius: 10,
+                      padding: 12,
+                      fontSize: 16,
+                      color: "#333",
+                    }}
+                    placeholder="Digite para buscar..."
+                    placeholderTextColor="#888"
+                    value={searchText}
+                    onChangeText={setSearchText}
+                    autoFocus
+                  />
+                  {/* Aqui pode-se adicionar lógica de busca futuramente */}
+                </View>
+              </View>
+            </Modal>
+            <Modal
+              visible={notificationDrawerVisible}
+              animationType="slide"
+              transparent={true}
+              onRequestClose={() => setNotificationDrawerVisible(false)}
+            >
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: "rgba(0,0,0,0.18)",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <View
+                  style={{
+                    backgroundColor: "#fff",
+                    borderTopLeftRadius: 24,
+                    borderTopRightRadius: 24,
+                    padding: 24,
+                    minHeight: 220,
+                    maxHeight: 400,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: 18,
+                        color: "#333",
+                      }}
+                    >
+                      Notificações
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setNotificationDrawerVisible(false)}
+                    >
+                      <Ionicons name="close" size={28} color="#6C584C" />
+                    </TouchableOpacity>
+                  </View>
+                  {/* Lista mockada de notificações */}
+                  <View style={{ gap: 16 }}>
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <Ionicons
+                        name="calendar-outline"
+                        size={20}
+                        color="#ADC178"
+                        style={{ marginRight: 8 }}
+                      />
+                      <Text style={{ color: "#333", fontSize: 15 }}>
+                        Você tem uma consulta agendada para amanhã.
+                      </Text>
+                    </View>
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <Ionicons
+                        name="water-outline"
+                        size={20}
+                        color="#ADC178"
+                        style={{ marginRight: 8 }}
+                      />
+                      <Text style={{ color: "#333", fontSize: 15 }}>
+                        Não esqueça de beber água hoje!
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </Modal>
+
             <View style={styles.chatSectionContainer}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Dúvidas Rápidas?</Text>
               </View>
               <TouchableOpacity
                 style={styles.chatCard}
-                onPress={() => navigation.navigate("Chat")}
+                onPress={() => setChatBotOpen(true)}
               >
                 <View style={styles.chatCardContent}>
                   <Ionicons
@@ -834,7 +983,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
           </ScrollView>
         </View>
       </View>
-      <ChatBot />
+      <ChatBot open={chatBotOpen} onClose={() => setChatBotOpen(false)} />
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,11 @@ import { useHydration } from "../../contexts/HydrationContext";
 import { useAppointment } from "../../contexts/AppointmentContext";
 import Markdown from "react-native-markdown-display";
 
+interface ChatBotProps {
+  open?: boolean;
+  onClose?: () => void;
+}
+
 interface Message {
   id: string;
   text: string;
@@ -27,7 +32,7 @@ interface Message {
   timestamp: Date;
 }
 
-export const ChatBot = () => {
+export const ChatBot: React.FC<ChatBotProps> = ({ open, onClose }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
@@ -43,6 +48,40 @@ export const ChatBot = () => {
   const windowHeight = Dimensions.get("window").height;
   const drawerHeight = windowHeight * 0.7;
 
+  // Limpa o histórico do chat ao trocar de usuário
+  useEffect(() => {
+    setMessages([
+      {
+        id: Date.now().toString(),
+        text: "Olá! Bem-vindo ao suporte da clínica. Como posso te ajudar hoje?",
+        isBot: true,
+        timestamp: new Date(),
+      },
+    ]);
+  }, [user?.id]);
+
+  // Sincroniza o estado interno com a prop 'open'
+  useEffect(() => {
+    if (typeof open === 'boolean') {
+      setIsDrawerOpen(open);
+      if (open) {
+        Animated.spring(drawerAnimation, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 65,
+          friction: 11,
+        }).start();
+      } else {
+        Animated.spring(drawerAnimation, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 65,
+          friction: 11,
+        }).start();
+      }
+    }
+  }, [open]);
+
   const toggleDrawer = () => {
     const toValue = isDrawerOpen ? 0 : 1;
     Animated.spring(drawerAnimation, {
@@ -52,6 +91,9 @@ export const ChatBot = () => {
       friction: 11,
     }).start();
     setIsDrawerOpen(!isDrawerOpen);
+    if (isDrawerOpen && onClose) {
+      onClose();
+    }
   };
 
   const handleNewConversation = () => {
@@ -215,7 +257,15 @@ export const ChatBot = () => {
       {/* Chat Button */}
       <TouchableOpacity
         style={[styles.chatButton, { bottom: insets.bottom + 20 }]}
-        onPress={toggleDrawer}
+        onPress={() => {
+          setIsDrawerOpen(true);
+          Animated.spring(drawerAnimation, {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 65,
+            friction: 11,
+          }).start();
+        }}
       >
         <Ionicons name="chatbubble-ellipses" size={24} color="white" />
       </TouchableOpacity>

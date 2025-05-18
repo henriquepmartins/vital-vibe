@@ -69,7 +69,6 @@ const DashboardAdmin = () => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Função para formatar telefone
   function formatPhoneInput(text: string) {
     let cleaned = text.replace(/\D/g, "");
     if (cleaned.length > 11) cleaned = cleaned.slice(0, 11);
@@ -83,7 +82,6 @@ const DashboardAdmin = () => {
     return text;
   }
 
-  // Função para limitar CRN a 5 dígitos
   function formatCRNInput(text: string) {
     return text.replace(/\D/g, "").slice(0, 5);
   }
@@ -96,7 +94,6 @@ const DashboardAdmin = () => {
       setSaving(false);
       return;
     }
-    // 1. Cria usuário no Auth
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
       {
         email: form.email,
@@ -121,7 +118,6 @@ const DashboardAdmin = () => {
       setSaving(false);
       return;
     }
-    // 2. Insere na tabela nutricionistas
     const { error } = await supabase.from("nutricionistas").insert([
       {
         user_id: userId,
