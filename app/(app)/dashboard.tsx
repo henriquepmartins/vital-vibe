@@ -700,14 +700,6 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
                   <Text style={styles.emptyText}>
                     Você ainda não possui um plano alimentar.
                   </Text>
-                  <TouchableOpacity
-                    style={styles.scheduleButton}
-                    onPress={() => navigation.navigate("Agendamento")}
-                  >
-                    <Text style={styles.scheduleButtonText}>
-                      Agendar Consulta
-                    </Text>
-                  </TouchableOpacity>
                 </View>
               )}
             </View>
