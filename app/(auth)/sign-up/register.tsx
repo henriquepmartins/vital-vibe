@@ -37,20 +37,17 @@ export default function RegisterScreen() {
 
   const formatCPF = (text: string) => {
     const numbers = text.replace(/\D/g, "");
-    if (numbers.length <= 3) {
-      return numbers;
-    } else if (numbers.length <= 6) {
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 6)
       return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
-    } else if (numbers.length <= 9) {
+    if (numbers.length <= 9)
       return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(
         6
       )}`;
-    } else {
-      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(
-        6,
-        9
-      )}-${numbers.slice(9, 11)}`;
-    }
+    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(
+      6,
+      9
+    )}-${numbers.slice(9, 11)}`;
   };
 
   const handleCPFChange = (text: string) => {
@@ -108,6 +105,11 @@ export default function RegisterScreen() {
       !password
     ) {
       setErrorMessage("Preencha todos os campos.");
+      return;
+    }
+
+    if (!cpf || cpf.trim() === "") {
+      setErrorMessage("CPF é obrigatório para pacientes.");
       return;
     }
 
@@ -219,8 +221,10 @@ export default function RegisterScreen() {
                   style={styles.input}
                   placeholder="000.000.000-00"
                   placeholderTextColor="#A98467"
-                  value={cpf}
-                  onChangeText={handleCPFChange}
+                  value={formatCPF(cpf)}
+                  onChangeText={(text) =>
+                    setCpf(text.replace(/\D/g, "").slice(0, 11))
+                  }
                   keyboardType="numeric"
                   maxLength={14}
                 />

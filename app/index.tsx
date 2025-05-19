@@ -39,6 +39,19 @@ import { supabase } from "@/lib/supabase";
 
 const { width, height } = Dimensions.get("window");
 
+// Helper to format CPF as 000.000.000-00
+function formatCPF(text: string) {
+  const numbers = text.replace(/\D/g, "");
+  if (numbers.length <= 3) return numbers;
+  if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+  if (numbers.length <= 9)
+    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+  return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(
+    6,
+    9
+  )}-${numbers.slice(9, 11)}`;
+}
+
 export default function LoginScreen({
   navigation,
 }: {
@@ -53,21 +66,31 @@ export default function LoginScreen({
     "paciente"
   );
   const [crn, setCrn] = useState("");
+  const [cpf, setCpf] = useState("");
   const router = useRouter();
 
   const handleLogin = async () => {
     setErrorMessage("");
     if (loginType === "paciente") {
-      if (!email || !password) {
+      if (!cpf || !password) {
         setErrorMessage("Preencha todos os campos.");
-        return;
-      }
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-        setErrorMessage("Digite um email válido.");
         return;
       }
       setLoading(true);
       try {
+        // Find user by CPF
+        const { data: users, error: userError } = await supabase
+          .from("users")
+          .select("email")
+          .eq("cpf", cpf)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        if (userError || !users || users.length === 0 || !users[0].email) {
+          setErrorMessage("CPF não encontrado.");
+          setLoading(false);
+          return;
+        }
+        const email = users[0].email;
         const { data, error } = await supabase.auth.signInWithPassword({
           email: email,
           password: password,
@@ -76,7 +99,7 @@ export default function LoginScreen({
           if (
             error.message.toLowerCase().includes("invalid login credentials")
           ) {
-            setErrorMessage("Email ou senha incorretos.");
+            setErrorMessage("CPF ou senha incorretos.");
           } else {
             setErrorMessage(error.message);
           }
@@ -209,15 +232,18 @@ export default function LoginScreen({
                 ) : null}
                 {loginType === "paciente" ? (
                   <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Email</Text>
+                    <Text style={styles.inputLabel}>CPF</Text>
                     <TextInput
                       style={styles.input}
-                      placeholder="seu@email.com"
+                      placeholder="000.000.000-00"
                       placeholderTextColor="#A98467"
-                      value={email}
-                      onChangeText={setEmail}
-                      keyboardType="email-address"
+                      value={formatCPF(cpf)}
+                      onChangeText={(text) =>
+                        setCpf(text.replace(/\D/g, "").slice(0, 11))
+                      }
+                      keyboardType="numeric"
                       autoCapitalize="none"
+                      maxLength={14}
                     />
                   </View>
                 ) : (
