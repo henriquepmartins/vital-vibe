@@ -4,24 +4,75 @@
     "appVersionSource": "remote"
   },
   "build": {
-    "development": {
-      "developmentClient": true,
+    "development:emulator": {
       "distribution": "internal",
+      "developmentClient": true,
+      "channel": "development",
+      "env": {
+        "APP_ENV": "development"
+      },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "image": "latest"
       }
     },
-    "preview": {
+    "development:simulator": {
       "distribution": "internal",
+      "developmentClient": true,
+      "channel": "development",
+      "env": {
+        "APP_ENV": "development"
+      },
+      "ios": {
+        "simulator": true,
+        "image": "latest"
+      }
+    },
+    "development:device": {
+      "distribution": "internal",
+      "developmentClient": true,
+      "channel": "development",
+      "env": {
+        "APP_ENV": "development"
+      },
+      "ios": {
+        "image": "latest"
+      }
+    },
+    "development": {
+      "distribution": "internal",
+      "channel": "development",
+      "env": {
+        "APP_ENV": "development",
+        "NODE_ENV": "development"
+      },
       "android": {
         "buildType": "apk"
+      },
+      "ios": {
+        "image": "latest"
       }
+    },
+    "staging": {
+      "distribution": "store",
+      "channel": "staging",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "APP_ENV": "staging"
+      },
+      "ios": {
+        "image": "latest"
+      },
+      "autoIncrement": true
     },
     "production": {
-      "autoIncrement": true,
-      "android": {
-        "buildType": "apk"
-      }
+      "env": {
+        "APP_ENV": "production",
+        "NODE_ENV": "production"
+      },
+      "channel": "production"
     }
   },
   "submit": {
