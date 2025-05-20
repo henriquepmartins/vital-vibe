@@ -9,7 +9,8 @@
       "developmentClient": true,
       "channel": "development",
       "env": {
-        "APP_ENV": "development"
+        "APP_ENV": "development",
+        "EXPO_PUBLIC_OPENROUTER_API_KEY": "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"
       },
       "android": {
         "buildType": "apk",
@@ -21,7 +22,8 @@
       "developmentClient": true,
       "channel": "development",
       "env": {
-        "APP_ENV": "development"
+        "APP_ENV": "development",
+        "EXPO_PUBLIC_OPENROUTER_API_KEY": "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"
       },
       "ios": {
         "simulator": true,
@@ -33,7 +35,8 @@
       "developmentClient": true,
       "channel": "development",
       "env": {
-        "APP_ENV": "development"
+        "APP_ENV": "development",
+        "EXPO_PUBLIC_OPENROUTER_API_KEY": "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"
       },
       "ios": {
         "image": "latest"
@@ -44,7 +47,8 @@
       "channel": "development",
       "env": {
         "APP_ENV": "development",
-        "NODE_ENV": "development"
+        "NODE_ENV": "development",
+        "EXPO_PUBLIC_OPENROUTER_API_KEY": "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"
       },
       "android": {
         "buildType": "apk"
@@ -60,7 +64,8 @@
         "buildType": "apk"
       },
       "env": {
-        "APP_ENV": "staging"
+        "APP_ENV": "staging",
+        "EXPO_PUBLIC_OPENROUTER_API_KEY": "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"
       },
       "ios": {
         "image": "latest"
@@ -70,9 +75,24 @@
     "production": {
       "env": {
         "APP_ENV": "production",
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "EXPO_PUBLIC_OPENROUTER_API_KEY": "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"
       },
       "channel": "production"
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "env": {
+        "APP_ENV": "preview",
+        "EXPO_PUBLIC_OPENROUTER_API_KEY": "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"
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "image": "latest"
+      }
     }
   },
   "submit": {

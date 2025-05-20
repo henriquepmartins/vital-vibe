@@ -78,24 +78,42 @@ export default function LoginScreen({
       }
       setLoading(true);
       try {
-        // Find user by CPF
+        const cleanCpf = cpf.replace(/\D/g, "");
+        console.log("[LOGIN] cleanCpf:", cleanCpf);
         const { data: users, error: userError } = await supabase
           .from("users")
-          .select("email")
-          .eq("cpf", cpf)
+          .select("email, cpf")
+          .eq("cpf", cleanCpf)
           .order("created_at", { ascending: false })
           .limit(1);
+        console.log(
+          "[LOGIN] Resultado busca users:",
+          users,
+          "Erro:",
+          userError
+        );
         if (userError || !users || users.length === 0 || !users[0].email) {
+          const { data: allUsers, error: allUsersError } = await supabase
+            .from("users")
+            .select("cpf, email");
+          console.log(
+            "[LOGIN] Todos os usuários cadastrados:",
+            allUsers,
+            "Erro:",
+            allUsersError
+          );
           setErrorMessage("CPF não encontrado.");
           setLoading(false);
           return;
         }
         const email = users[0].email;
+        console.log("[LOGIN] E-mail encontrado:", email);
         const { data, error } = await supabase.auth.signInWithPassword({
           email: email,
           password: password,
         });
         if (error) {
+          console.log("[LOGIN] Erro de autenticação:", error);
           if (
             error.message.toLowerCase().includes("invalid login credentials")
           ) {
@@ -107,6 +125,7 @@ export default function LoginScreen({
         }
         router.push("/dashboard");
       } catch (error) {
+        console.log("[LOGIN] Erro inesperado:", error);
         setErrorMessage("Erro inesperado. Tente novamente.");
       } finally {
         setLoading(false);

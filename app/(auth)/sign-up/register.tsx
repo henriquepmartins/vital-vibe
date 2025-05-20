@@ -120,6 +120,7 @@ export default function RegisterScreen() {
 
     setLoading(true);
     try {
+      const cleanCpf = cpf.replace(/\D/g, "");
       const {
         data: { session },
         error,
@@ -129,7 +130,7 @@ export default function RegisterScreen() {
         options: {
           data: {
             name: name,
-            cpf: cpf,
+            cpf: cleanCpf,
             phone: phone,
             weight: weight,
             height: height,
@@ -154,6 +155,7 @@ export default function RegisterScreen() {
           "Por favor, verifique seu email para confirmar o cadastro!"
         );
       } else {
+        await supabase.from("users").update({ password }).eq("email", email);
         router.push("/dashboard");
       }
     } catch (error) {
