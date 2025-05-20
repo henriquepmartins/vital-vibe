@@ -48,7 +48,6 @@ export const ChatBot: React.FC<ChatBotProps> = ({ open, onClose }) => {
   const windowHeight = Dimensions.get("window").height;
   const drawerHeight = windowHeight * 0.7;
 
-  // Limpa o histórico do chat ao trocar de usuário
   useEffect(() => {
     setMessages([
       {
@@ -60,9 +59,8 @@ export const ChatBot: React.FC<ChatBotProps> = ({ open, onClose }) => {
     ]);
   }, [user?.id]);
 
-  // Sincroniza o estado interno com a prop 'open'
   useEffect(() => {
-    if (typeof open === 'boolean') {
+    if (typeof open === "boolean") {
       setIsDrawerOpen(open);
       if (open) {
         Animated.spring(drawerAnimation, {
@@ -129,7 +127,6 @@ export const ChatBot: React.FC<ChatBotProps> = ({ open, onClose }) => {
     let prompt =
       "Você é um assistente de uma clínica de nutrição. Responda de forma simpática, clara e útil, lembrando o contexto da conversa.";
 
-    // Dados do usuário
     if (user) {
       prompt += `\nInformações do usuário:\n`;
       prompt += `- Nome: ${user.name || "-"}\n`;
@@ -145,13 +142,10 @@ export const ChatBot: React.FC<ChatBotProps> = ({ open, onClose }) => {
       if (user.phone) prompt += `- Telefone: ${user.phone}\n`;
     }
 
-    // Dados de hidratação
     prompt += `- Copos de água bebidos hoje: ${waterProgress} de ${totalWaterGoal}\n`;
 
-    // Total de consultas agendadas
     prompt += `- Consultas agendadas: ${appointmentCount}\n`;
 
-    // Dados de agendamento
     if (appointmentInfo.patientName) {
       prompt += `\nInformações do agendamento atual:\n`;
       prompt += `- Paciente: ${appointmentInfo.patientName}\n`;
@@ -184,6 +178,8 @@ export const ChatBot: React.FC<ChatBotProps> = ({ open, onClose }) => {
       setInputText("");
       setLoading(true);
       try {
+        // LOG: Verifique se a chave da API está definida
+        console.log("API KEY:", process.env.EXPO_PUBLIC_OPENROUTER_API_KEY);
         const history = [
           {
             role: "system",
@@ -196,6 +192,19 @@ export const ChatBot: React.FC<ChatBotProps> = ({ open, onClose }) => {
           { role: "user", content: userMessage.text },
         ];
 
+        const payload = {
+          model: "deepseek/deepseek-r1:free",
+          messages: history,
+          max_tokens: 1000,
+          temperature: 0.7,
+          top_p: 0.9,
+          frequency_penalty: 0.3,
+          presence_penalty: 0.3,
+          n: 1,
+        };
+
+        console.log("Payload:", JSON.stringify(payload));
+
         const response = await fetch(
           "https://openrouter.ai/api/v1/chat/completions",
           {
@@ -204,20 +213,15 @@ export const ChatBot: React.FC<ChatBotProps> = ({ open, onClose }) => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${process.env.EXPO_PUBLIC_OPENROUTER_API_KEY}`,
             },
-            body: JSON.stringify({
-              model: "meta-llama/llama-4-maverick:free",
-              messages: history,
-              max_tokens: 1000,
-              temperature: 0.7,
-              top_p: 0.9,
-              frequency_penalty: 0.3,
-              presence_penalty: 0.3,
-              n: 1,
-            }),
+            body: JSON.stringify(payload),
           }
         );
 
-        if (!response.ok) throw new Error("Erro ao comunicar com o chatbot");
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.log("Erro OpenRouter:", errorText);
+          throw new Error("Erro ao comunicar com o chatbot");
+        }
 
         const data = await response.json();
         const botText =
@@ -316,7 +320,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ open, onClose }) => {
               {message.isBot ? (
                 <Markdown
                   style={{
-                    body: [styles.messageText, styles.botMessageText],
+                    body: { ...styles.messageText, ...styles.botMessageText },
                     strong: { fontWeight: "bold" },
                     em: { fontStyle: "italic" },
                     heading1: { fontSize: 22, fontWeight: "bold" },
