@@ -125,7 +125,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ open, onClose }) => {
 
   const getSystemPrompt = () => {
     let prompt =
-      "Você é um assistente de uma clínica de nutrição. Responda de forma simpática, clara e útil, lembrando o contexto da conversa.";
+      "Você é um assistente de uma clínica de nutrição. Responda sempre em português brasileiro, de forma simpática, clara e útil, lembrando o contexto da conversa.";
 
     if (user) {
       prompt += `\nInformações do usuário:\n`;
@@ -193,7 +193,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ open, onClose }) => {
         ];
 
         const payload = {
-          model: "deepseek/deepseek-r1:free",
+          model: "qwen/qwen3-0.6b-04-28:free",
           messages: history,
           max_tokens: 1000,
           temperature: 0.7,
